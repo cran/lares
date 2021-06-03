@@ -1,6 +1,6 @@
 # lares <img src='man/figures/lares_logo.png' align="right" height="140px" />
 ### R Package for Analytics and Machine Learning
-[![R-CMD-check](https://github.com/laresbernardo/lares/workflows/R-CMD-check/badge.svg?branch=master)](https://github.com/laresbernardo/lares/actions?query=workflow%3AR-CMD-check) [![documentation](https://github.com/laresbernardo/lares/workflows/documentation/badge.svg)](https://laresbernardo.github.io/lares/reference/index.html) [![CodeFactor](https://www.codefactor.io/repository/github/laresbernardo/lares/badge)](https://www.codefactor.io/repository/github/laresbernardo/lares) [![saythanks](https://img.shields.io/badge/say-hi-blue.svg)](https://www.linkedin.com/in/laresbernardo)
+[![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/lares)](https://cran.r-project.org/package=lares) [![R-CMD-check](https://github.com/laresbernardo/lares/workflows/R-CMD-check/badge.svg?branch=master)](https://github.com/laresbernardo/lares/actions?query=workflow%3AR-CMD-check) [![documentation](https://github.com/laresbernardo/lares/workflows/documentation/badge.svg)](https://laresbernardo.github.io/lares/reference/index.html) [![CodeFactor](https://www.codefactor.io/repository/github/laresbernardo/lares/badge)](https://www.codefactor.io/repository/github/laresbernardo/lares) [![saythanks](https://img.shields.io/badge/say-hi-blue.svg)](https://www.linkedin.com/in/laresbernardo)
 ----
 
 R library built to automate, improve, and speed everyday **Analysis and Machine Learning** tasks. With a wide variety of family functions like Machine Learning, data cleaning and procesing, EDA, Investment, NLP, Queries, Scrappers, API interactions, `lares` helps the analyst or data scientist get quick, reproducible, robust results, without the need of repetitive coding nor extensive programming skills. Feel free to install, use, and/or comment on any of the code and functionalities. And if you are also colourblind, be sure to check the the colour palettes!
@@ -10,16 +10,17 @@ Don't hesitate to contact me, and please when you do, let me know where did you 
 ## Installation
 
 ```{r}
+## CRAN VERSION
+install.packages("lares")
+
+## DEV VERSION
 # If you don't have remotes yet, run: install.packages('remotes')
 remotes::install_github("laresbernardo/lares")
-
 # Full installation with recommended dependencies (takes more time)
 remotes::install_github("laresbernardo/lares", dependencies = TRUE)
 ```
 
-**Windows users**: you MAY have to install `RTools` before running the above code. Download it [here](https://cran.r-project.org/bin/windows/Rtools/).
-
-**CRAN NOTE**: I do NOT have plans to submit the library to CRAN, eventhough I'm a huge fan and it passes all its quality tests. I see `lares` more of an everyday useful and shareble *package* rather than a "specialized for a specific task" *library*. It has too many various kinds of functions, from NLP to querying APIs, plotting Machine Learning results to market stocks and portfolio reports. I gladly share my code with ouR community and encourage you to use/comment/share it, but I do think that CRAN is not aiming for this kind of libraries in their repertoire.
+**Windows users**: you MAY have to install `RTools` before installing the dev version. Download it [here](https://cran.r-project.org/bin/windows/Rtools/).
 
 ## See the library in action!
 
@@ -27,7 +28,7 @@ remotes::install_github("laresbernardo/lares", dependencies = TRUE)
 
 - DataScience+: [Visualizations for Regression Models Results](https://datascienceplus.com/machine-learning-results-in-r-one-plot-to-rule-them-all-part-2-regression-models)
 
-- DataScience+: [AutoML and DALEX for Dataset Understanding](https://datascienceplus.com/understanding-titanic-dataset-with-h2os-automl-dalex-and-lares-library)
+- DataScience+: [AutoML and DALEX for Dataset Understanding](https://datascienceplus.com/understanding-titanic-dataset-with-h2os-automl-dalex-and-lares-library/)
 
 - DataScience+: [Find Insights with Ranked Cross-Correlations](https://datascienceplus.com/find-insights-with-ranked-cross-correlations/)
 
@@ -43,7 +44,8 @@ remotes::install_github("laresbernardo/lares", dependencies = TRUE)
 ![AutoML Map (lares)](man/figures/automl_map.png?raw=true)
 
 ### Insights While Understanding
-To get insights and value out of your dataset, first you need to understand its structure, types of data, empty values, interactions between variables... `corr_cross()` and `freqs()` are here to give you just that! They show a wide persepective of your dataset content, correlations, and frequencies. Additionally, with the `missingness()` function to detect all missing values and `df_str()` to break down you data frame's structure, you will be ready to squeeze valuable insights out of your data.
+To get insights and value out of your dataset, first you need to understand its structure, types of data, empty values, interactions between variables... `corr_cross()` and `freqs()` are here to give you just that! They show a wide perspective of your dataset content, correlations, and frequencies. Additionally, with the `missingness()` function to detect all missing values and `df_str()` to break down you data frame's structure, you will be ready to squeeze valuable insights out of your data. If you'd like to go deeper, try the `x2y()`, `lasso_vars()` and `tree_var()` to use Machine Learning to detect patterns, predictive powers, and variables importance.
+
 ![Cross-Correlations and Frequencies (lares)](man/figures/titanic_df.png?raw=true)
 
 ### Kings of Data Mining
@@ -57,6 +59,6 @@ You can check all active functions and documentations [here](https://laresbernar
 
 ### Getting further help
 
-If you need help with any of the functions when using RStudio, use the `?` function (i.e. `?lares::function`) and the **Help** tab will display a short explanation on each function and its parameters. You might also be interested in the [Online Official Documentation](https://laresbernardo.github.io/lares/reference/index.html) to check all functions and parameters.
+If you need help with any of the functions when using RStudio, use the `?` function (i.e. `?lares::function`) and the **Help** tab will display a short explanation on each function and its parameters. You might also be interested in the [online documentation](https://laresbernardo.github.io/lares/reference/index.html) to check all functions and parameters.
 
 If you encounter a bug, please share with me a reproducible example on [Github issues](https://github.com/laresbernardo/lares/issues) and I'll take care of it. For inquiries, and other matters, you can [LinkedIn me](https://www.linkedin.com/in/laresbernardo/) anytime!

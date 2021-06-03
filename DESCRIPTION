@@ -1,7 +1,7 @@
 Package: lares
 Type: Package
 Title: Analytics, Data Mining & Machine Learning Sidekick
-Version: 4.10.6
+Version: 5.0.0
 Authors@R: c(
     person("Bernardo", "Lares", , "laresbernardo@gmail.com", c("aut", "cre")))
 Maintainer: Bernardo Lares <laresbernardo@gmail.com>
@@ -22,7 +22,7 @@ License: AGPL-3
 Encoding: UTF-8
 LazyData: true
 NeedsCompilation: no
-Packaged: 2021-05-27 17:04:43 UTC; bernardolares
+Packaged: 2021-06-03 16:29:19 UTC; bernardolares
 Author: Bernardo Lares [aut, cre]
 Repository: CRAN
-Date/Publication: 2021-05-31 07:20:02 UTC
+Date/Publication: 2021-06-03 17:10:15 UTC

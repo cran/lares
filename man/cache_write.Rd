@@ -22,13 +22,9 @@ cache_read(
   quiet = FALSE
 )
 
-cache_exists(
-  base = NULL,
-  cache_dir = getOption("LARES_CACHE_DIR"),
-  filename = NULL
-)
+cache_exists(base = NULL, cache_dir = getOption("LARES_CACHE_DIR"))
 
-cache_clear(cache_dir = getOption("LARES_CACHE_DIR"))
+cache_clear(cache_dir = getOption("LARES_CACHE_DIR"), quiet = FALSE)
 }
 \arguments{
 \item{data}{Object}
@@ -45,8 +41,6 @@ if the cache should be used to proceed or ignored; when writing, (interactive)
 ask the user if the cache should be overwritten.}
 
 \item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
-
-\item{filename}{Character. File name to check existence.}
 }
 \value{
 \code{cache_write}. No return value, called for side effects.
@@ -63,8 +57,10 @@ improve timings and UX.
 }
 \examples{
 x = list(a = 1, b = 2:4)
-base <- c(as.character(Sys.Date()), "A","B","C")
+base <- c(as.character(Sys.Date()), "A","B")
 cache_write(x, base)
 cache_read(base, ask = FALSE)
+cache_exists("lares_cache_2021-06-01.A.B.C")
+cache_clear()
 }
 \concept{Cache}
