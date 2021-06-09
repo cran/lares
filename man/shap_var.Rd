@@ -22,7 +22,7 @@ Having a \code{h2o_shap} object, plot a dependence plot for any
 categorical or numerical feature.
 }
 \examples{
-\donttest{
+\dontrun{
 # Train a h2o_automl model
 model <- h2o_automl(dft, Survived, max_models = 1, target = TRUE,
                     ignore = c("Ticket", "Cabin", "PassengerId"),
@@ -40,7 +40,6 @@ SHAP_values <- h2o_shap(model)
 head(SHAP_values)
 
 # You must have "ggbeeswarm" library to use this auxiliary function:
-\dontrun{
 # Plot SHAP values (feature importance)
 plot(SHAP_values)
 
@@ -49,7 +48,6 @@ shap_var(SHAP_values, Pclass)
 
 # Plot some of the variables (numerical)
 shap_var(SHAP_values, Fare)
-}
 }
 }
 \seealso{

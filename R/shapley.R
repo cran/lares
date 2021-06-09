@@ -16,7 +16,7 @@
 #' @param ... Additional argument for \code{predict_contributions.H2OModel}
 #' @return H2OFrame with shap values for every observation and feature.
 #' @examples 
-#' \donttest{
+#' \dontrun{
 #' # Train a h2o_automl model
 #' model <- h2o_automl(dft, Survived, max_models = 1, target = TRUE,
 #'                     ignore = c("Ticket", "Cabin", "PassengerId"),
@@ -34,7 +34,6 @@
 #' head(SHAP_values)
 #' 
 #' # You must have "ggbeeswarm" library to use this auxiliary function:
-#' \dontrun{
 #' # Plot SHAP values (feature importance)
 #' plot(SHAP_values)
 #' 
@@ -43,7 +42,6 @@
 #' 
 #' # Plot some of the variables (numerical)
 #' shap_var(SHAP_values, Fare)
-#' }
 #' }
 #' @export
 h2o_shap <- function(model, test = "auto", scores = "auto", y = "y",...) {
