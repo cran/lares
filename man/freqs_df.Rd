@@ -22,7 +22,7 @@ freqs_df(
 \item{max}{Numeric. Top variance threshold. Range: (0-1].
 These variables will be excluded}
 
-\item{min}{Numeric. Minimum variance threshold. Range: [0-1). 
+\item{min}{Numeric. Minimum variance threshold. Range: [0-1).
 These values will be grouped into a high frequency (HF) value}
 
 \item{novar}{Boolean. Remove no variance columns?}
@@ -35,7 +35,7 @@ These values will be grouped into a high frequency (HF) value}
 
 \item{save}{Boolean. Save the output plot in our working directory}
 
-\item{subdir}{Character. Into which subdirectory do you wish to 
+\item{subdir}{Character. Into which subdirectory do you wish to
 save the plot to?}
 }
 \value{
@@ -82,7 +82,6 @@ Other Visualization:
 \code{\link{freqs_plot}()},
 \code{\link{freqs}()},
 \code{\link{gg_bars}()},
-\code{\link{gg_pie}()},
 \code{\link{noPlot}()},
 \code{\link{plot_chord}()},
 \code{\link{plot_survey}()},

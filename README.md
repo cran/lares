@@ -1,9 +1,10 @@
-# lares <img src='man/figures/lares_logo.png' align="right" height="140px" />
+# lares <img src='man/figures/logo.png' align="right" height="139px" />
+
 ### R Package for Analytics and Machine Learning
 [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/lares)](https://cran.r-project.org/package=lares) [![R-CMD-check](https://github.com/laresbernardo/lares/workflows/R-CMD-check/badge.svg?branch=master)](https://github.com/laresbernardo/lares/actions?query=workflow%3AR-CMD-check) [![documentation](https://github.com/laresbernardo/lares/workflows/documentation/badge.svg)](https://laresbernardo.github.io/lares/reference/index.html) [![CodeFactor](https://www.codefactor.io/repository/github/laresbernardo/lares/badge)](https://www.codefactor.io/repository/github/laresbernardo/lares) [![saythanks](https://img.shields.io/badge/say-hi-blue.svg)](https://www.linkedin.com/in/laresbernardo)
 ----
 
-R package built to automate, improve, and speed everyday **Analysis and Machine Learning** tasks. With a wide variety of family functions like Machine Learning, data cleaning and procesing, EDA, Investment, NLP, Queries, Scrappers, API interactions, `lares` helps the analyst or data scientist get quick, reproducible, robust results, without the need of repetitive coding nor extensive programming skills. Feel free to install, use, and/or comment on any of the code and functionalities. And if you are also colourblind, be sure to check the colour palettes!
+R package built to automate, improve, and speed everyday **Analysis and Machine Learning** tasks. With a wide variety of family functions like Machine Learning, data cleaning and processing, EDA, Investment, NLP, Queries, Scrappers, API interactions, `lares` helps the analyst or data scientist get quick, reproducible, robust results, without the need of repetitive coding nor extensive programming skills. Feel free to install, use, and/or comment on any of the code and functionalities. And if you are also colourblind, be sure to check the colour palettes!
 
 Don't hesitate to contact me, and please when you do, let me know where did you first hear from the library and which family of functions you are most interested in.
 
@@ -24,6 +25,8 @@ remotes::install_github("laresbernardo/lares", dependencies = TRUE)
 
 ## See the library in action!
 
+- Vignette: [Introduction to AutoML using `lares`](https://laresbernardo.github.io/lares/articles/h2o_automl.html)
+
 - DataScience+: [Visualizations for Classification Models Results](https://datascienceplus.com/machine-learning-results-one-plot-to-rule-them-all/)
 
 - DataScience+: [Visualizations for Regression Models Results](https://datascienceplus.com/machine-learning-results-in-r-one-plot-to-rule-them-all-part-2-regression-models/)
@@ -36,11 +39,13 @@ remotes::install_github("laresbernardo/lares", dependencies = TRUE)
 
 - DataScience+: [Manage Credentials Safely in R](https://datascienceplus.com/how-to-manage-credentials-and-secrets-safely-in-r/)
 
+- DataScience+: [Using cache to avoid re-processing in R](https://datascienceplus.com/using-cache-to-avoid-re-processing-improve-ux-and-quicken-results-in-r/)
+
 - DataScience+: [Plot Timelines with Gantt Charts](https://datascienceplus.com/visualize-your-cvs-timeline-with-r-gantt-style/)
 
 - RPubs: [freqs(), distr(), and corr_var() Examples](http://rpubs.com/laresbernardo/freqs-distr-corr)
 
-### AutoML Simplified Map from [`h2o_automl()`](https://laresbernardo.github.io/lares/reference/h2o_automl.html)
+### AutoML Simplified Map [`h2o_automl()`](https://laresbernardo.github.io/lares/reference/h2o_automl.html)
 ![AutoML Map (lares)](man/figures/automl_map.png?raw=true)
 
 ### Insights While Understanding

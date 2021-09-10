@@ -18,23 +18,23 @@ gain_lift(
 
 \item{score}{Vector. Predicted value or model's result}
 
-\item{target}{Value. Which is your target positive value? If 
-set to 'auto', the target with largest mean(score) will be 
+\item{target}{Value. Which is your target positive value? If
+set to 'auto', the target with largest mean(score) will be
 selected. Change the value to overwrite. Only used when binary
 categorical model.}
 
-\item{splits}{Integer. Numer of percentiles to split the data}
+\item{splits}{Integer. Number of percentiles to split the data}
 
 \item{plot}{Boolean. Plot results? Uses \code{mplot_gain()}}
 
-\item{quiet}{Boolean. Do not show message for auto target?}
+\item{quiet}{Boolean. Quiet all messages, warnings, recommendations?}
 }
 \value{
 data.frame when \code{plot=FALSE} or plot when \code{plot=TRUE}.
 }
 \description{
-This function calculates cumulative gain, lift, and response 
-values for a predictive score of a specific target. You can use the 
+This function calculates cumulative gain, lift, and response
+values for a predictive score of a specific target. You can use the
 \code{mplot_gain()} function to create a plot.
 }
 \examples{

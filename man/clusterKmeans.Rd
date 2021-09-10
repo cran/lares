@@ -2,19 +2,21 @@
 % Please edit documentation in R/clusters.R
 \name{clusterKmeans}
 \alias{clusterKmeans}
-\title{Automated K-Means Clustering + PCA}
+\title{Automated K-Means Clustering + PCA/t-SNE}
 \usage{
 clusterKmeans(
   df,
-  k = NA,
+  k = NULL,
   limit = 20,
   drop_na = TRUE,
-  ignore = NA,
+  ignore = NULL,
   ohse = TRUE,
   norm = TRUE,
+  dim_red = "PCA",
   comb = c(1, 2),
   seed = 123,
-  quiet = TRUE
+  quiet = FALSE,
+  ...
 )
 }
 \arguments{
@@ -26,13 +28,15 @@ clusterKmeans(
 
 \item{drop_na}{Boolean. Should NA rows be removed?}
 
-\item{ignore}{Character vector. Which columns should be excluded
-when calculating kmeans?}
+\item{ignore}{Character vector. Names of columns to ignore.}
 
 \item{ohse}{Boolean. Do you wish to automatically run one hot
 encoding to non-numerical columns?}
 
 \item{norm}{Boolean. Should the data be normalized?}
+
+\item{dim_red}{Character. Select dimensionality reduction technique.
+Pass any of: \code{c("PCA", "tSNE", "all", "none")}.}
 
 \item{comb}{Vector. Which columns do you wish to plot? Select which
 two variables by name or column position.}
@@ -40,9 +44,11 @@ two variables by name or column position.}
 \item{seed}{Numeric. Seed for reproducibility}
 
 \item{quiet}{Boolean. Keep quiet? If not, print messages.}
+
+\item{...}{Additional parameters to pass sub-functions.}
 }
 \value{
-List. If no \code{k} is provided, contains \code{nclusters} and 
+List. If no \code{k} is provided, contains \code{nclusters} and
 \code{nclusters_plot} to determine optimal \code{k} given their WSS (Within
 Groups Sum of Squares). If \code{k} is provided, additionally we get:
 \itemize{
@@ -51,22 +57,27 @@ Groups Sum of Squares). If \code{k} is provided, additionally we get:
   \item \code{fit} kmeans object used to fit clusters
   \item \code{means} data.frame with means and counts for each cluster
   \item \code{correlations} plot with correlations grouped by clusters
-  \item \code{PCA} list with PCA results
+  \item \code{PCA} list with PCA results (when \code{dim_red="PCA"})
+  \item \code{tSNE} list with t-SNE results (when \code{dim_red="tSNE"})
 }
 }
 \description{
 This function lets the user cluster a whole data.frame automatically.
-As you might know, the goal of kmeans is to group data points into 
-distinct non-overlapping subgroups. If needed, one hot encoding will 
-be applied to categorical values automatically with this function. 
+As you might know, the goal of kmeans is to group data points into
+distinct non-overlapping subgroups. If needed, one hot encoding will
+be applied to categorical values automatically with this function.
 For consideration: Scale/standardize the data when applying kmeans.
-Also, kmeans assumes spherical shapes of clusters and does not work well 
+Also, kmeans assumes spherical shapes of clusters and does not work well
 when clusters are in different shapes such as elliptical clusters.
 }
 \examples{
 Sys.unsetenv("LARES_FONT") # Temporal
 data("iris")
 df <- subset(iris, select = c(-Species))
+print(head(df))
+
+# If dataset has +5 columns, feel free to reduce dimenstionalities
+# with reduce_pca() or reduce_tsne() first
 
 # Find optimal k
 check_k <- clusterKmeans(df, limit = 10)
@@ -81,17 +92,15 @@ names(clusters)
 # Cross-Correlations for each cluster
 plot(clusters$correlations)
 
-# PCA Results
-plot(clusters$PCA$plotVarExp)
-plot(clusters$PCA$plot_1_2)
-
-# You must have "ggforce" library to use this auxiliary function:
-# 3D interactive plot
-\dontrun{clusters$PCA$plot_1_2_3}
+# PCA Results (when dim_red = "PCA")
+plot(clusters$PCA$plot_explained)
+plot(clusters$PCA$plot)
 }
 \seealso{
 Other Clusters: 
 \code{\link{clusterOptimalK}()},
-\code{\link{clusterVisualK}()}
+\code{\link{clusterVisualK}()},
+\code{\link{reduce_pca}()},
+\code{\link{reduce_tsne}()}
 }
 \concept{Clusters}

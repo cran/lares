@@ -6,7 +6,7 @@
 \usage{
 date_feats(
   dates,
-  keep_originals = FALSE,
+  drop = FALSE,
   only = NA,
   features = TRUE,
   holidays = FALSE,
@@ -16,10 +16,10 @@ date_feats(
 )
 }
 \arguments{
-\item{dates}{Vector or dataframe. Non-date/time columns will be 
+\item{dates}{Vector or dataframe. Non-date/time columns will be
 automatically ignored/extracted.}
 
-\item{keep_originals}{Boolean. Should the original date/time columns be
+\item{drop}{Boolean. Should the original date/time columns be
 kept in the results? Only valid when input is a dataframe.}
 
 \item{only}{Character or vector. Which columns do you wish to process? If
@@ -47,19 +47,20 @@ of a dataframe or vector with date/time variables.
 \examples{
 df <- data.frame(
   dates = sample(seq(Sys.Date() - 365, Sys.Date(), by = 1), 50),
-  times = sample(seq(Sys.time() - 1e7, Sys.time(), by = 1), 50))
-  
+  times = sample(seq(Sys.time() - 1e7, Sys.time(), by = 1), 50)
+)
+
 # Input as a vector or dataframe
-date_feats(df, keep_originals = TRUE) \%>\% head(10)
+date_feats(df, drop = TRUE) \%>\% head(10)
 
 # Holidays given a date range and country
 \donttest{
-  hol <- date_feats(
-    seq(Sys.Date() - 365, Sys.Date(), by = 1), 
-    keep_originals = TRUE, 
-    holidays = TRUE, 
-    country = "Colombia")
-  head(hol[!is.na(hol$holidayname),])
+hol <- date_feats(
+  seq(Sys.Date() - 365, Sys.Date(), by = 1),
+  holidays = TRUE,
+  country = "Colombia"
+)
+head(hol[!is.na(hol$holidayname), ])
 }
 }
 \seealso{

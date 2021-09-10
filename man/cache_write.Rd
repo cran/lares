@@ -30,15 +30,18 @@ cache_clear(cache_dir = getOption("LARES_CACHE_DIR"), quiet = FALSE)
 \item{data}{Object}
 
 \item{base}{Character vector. Unique name for your cache file. You can pass
-a character vector with multiple elements that will be concatenated.}
+a character vector with multiple elements that will be concatenated.
+All cache files with start with \code{lares_cache_*} automatically to
+quickly detect these cache files.}
 
 \item{cache_dir}{Character. Where do you want to save you cache files?
 By default they'll be stored on \code{tempdir()} but you can change it
 using this parameter or setting a global option called \code{"LARES_CACHE_DIR"}.}
 
-\item{ask}{Boolean. If cache exists, when reading: (interactive) ask the user 
+\item{ask}{Boolean. If cache exists, when reading: (interactive) ask the user
 if the cache should be used to proceed or ignored; when writing, (interactive)
-ask the user if the cache should be overwritten.}
+ask the user if the cache should be overwritten. Note that you can only ask for
+one cache file at a time because vectors are concatenated.}
 
 \item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
 }
@@ -56,8 +59,8 @@ This function lets the user save and load a cache of any R object to
 improve timings and UX.
 }
 \examples{
-x = list(a = 1, b = 2:4)
-base <- c(as.character(Sys.Date()), "A","B")
+x <- list(a = 1, b = 2:4)
+base <- c(as.character(Sys.Date()), "A", "B")
 cache_write(x, base)
 cache_read(base, ask = FALSE)
 cache_exists("lares_cache_2021-06-01.A.B.C")

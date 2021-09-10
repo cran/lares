@@ -4,7 +4,7 @@
 \name{lares}
 \alias{lares}
 \alias{lares-package}
-\title{Analytics, Visualization & Machine Learning Tasks Library}
+\title{Analytics, Data Mining & Machine Learning Sidekick}
 \description{
 R library for better/faster analytics, visualization, data mining, and machine learning tasks.
 }
@@ -12,6 +12,7 @@ R library for better/faster analytics, visualization, data mining, and machine l
 Useful links:
 \itemize{
   \item \url{https://github.com/laresbernardo/lares}
+  \item \url{https://laresbernardo.github.io/lares/}
   \item Report bugs at \url{https://github.com/laresbernardo/lares/issues}
 }
 

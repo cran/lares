@@ -4,10 +4,10 @@
 \alias{holidays}
 \title{Holidays in your Country}
 \usage{
-holidays(countries = "Colombia", years = year(Sys.Date()))
+holidays(countries = "Venezuela", years = year(Sys.Date()))
 }
 \arguments{
-\item{countries}{Character or vector. For which country(ies) should the 
+\item{countries}{Character or vector. For which country(ies) should the
 holidays be imported?}
 
 \item{years}{Character or vector. For which year(s) do you wish to import
@@ -22,7 +22,7 @@ any country and year within +- 5 years. Thanks to timeanddate.com!
 }
 \examples{
 \donttest{
-holidays(countries = "Argentina") 
+holidays(countries = "Argentina")
 holidays(countries = c("Argentina", "Venezuela"), years = c(2019, 2020))
 }
 }

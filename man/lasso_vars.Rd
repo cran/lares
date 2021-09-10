@@ -20,7 +20,7 @@ lasso_vars(
 \item{df}{Dataframe. Any dataframe is valid as \code{ohse} will be applied to
 process categorical values, and values will be standardize automatically.}
 
-\item{variable}{Variable.}
+\item{variable}{Variable. Independent variable.}
 
 \item{ignore}{Character vector. Variables to exclude from study.}
 
@@ -30,31 +30,33 @@ process categorical values, and values will be standardize automatically.}
 
 \item{top}{Integer. Plot top n results only.}
 
-\item{quiet}{Boolean. Keep quiet? Else, show messages}
+\item{quiet}{Boolean. Keep quiet? Else, show messages.}
 
 \item{seed}{Numeric.}
 
-\item{...}{ohse parameters.}
+\item{...}{Additional parameters passed to \code{ohse()}.}
 }
 \value{
 List. Contains lasso model coefficients, performance metrics, the
 actual model fitted and a plot.
 }
 \description{
-Use Lasso regression to identify the most relevant variables that 
-can predict/identify another variable. You might want to compare 
-with corr_var() results to compliment the analysis No need to
-standardize, center or scale your data. Tidyverse friendly.
+Use Lasso regression to identify the most relevant variables that
+can predict/identify another variable. You might want to compare
+with \code{corr_var()} and/or \code{x2y()} results to compliment
+the analysis No need to standardize, center or scale your data.
+Tidyverse friendly.
 }
 \examples{
-\dontrun{
+\donttest{
+# CRAN
 Sys.unsetenv("LARES_FONT") # Temporal
 data(dft) # Titanic dataset
 
 m <- lasso_vars(dft, Survived, ignore = c("Cabin"))
 print(m$coef)
 print(m$metrics)
-m$plot
+plot(m$plot)
 }
 }
 \seealso{

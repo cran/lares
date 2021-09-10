@@ -36,7 +36,7 @@ selected \code{method}.
 }
 \description{
 Visualize cluster data for assorted values of k and methods such as
-WSS, Silhouette and Gap Statistic. See \code{factoextra::fviz_nbclust} 
+WSS, Silhouette and Gap Statistic. See \code{factoextra::fviz_nbclust}
 for more.
 }
 \examples{
@@ -51,6 +51,8 @@ clusterOptimalK(df)
 \seealso{
 Other Clusters: 
 \code{\link{clusterKmeans}()},
-\code{\link{clusterVisualK}()}
+\code{\link{clusterVisualK}()},
+\code{\link{reduce_pca}()},
+\code{\link{reduce_tsne}()}
 }
 \concept{Clusters}

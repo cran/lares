@@ -7,7 +7,7 @@
 plot_survey(answers, ignore = 1, title = NA, subtitle = NA)
 }
 \arguments{
-\item{answers}{Dataframe. Answers. Each row a different person. 
+\item{answers}{Dataframe. Answers. Each row a different person.
 Each column a different answer.}
 
 \item{ignore}{Numeric Vector. Which columns are NOT answers?}
@@ -30,7 +30,6 @@ Other Visualization:
 \code{\link{freqs_plot}()},
 \code{\link{freqs}()},
 \code{\link{gg_bars}()},
-\code{\link{gg_pie}()},
 \code{\link{noPlot}()},
 \code{\link{plot_chord}()},
 \code{\link{plot_timeline}()},

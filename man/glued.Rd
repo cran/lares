@@ -4,12 +4,15 @@
 \alias{glued}
 \title{Interpolate a string [glue wrapper]}
 \usage{
-glued(..., .sep = "", .envir = parent.frame())
+glued(..., .sep = "", empty_lines = "keep", .envir = parent.frame())
 }
 \arguments{
 \item{...}{[\code{expressions}]\cr Expressions string(s) to format, multiple inputs are concatenated together before formatting.}
 
 \item{.sep}{[\code{character(1)}: \sQuote{""}]\cr Separator used to separate elements.}
+
+\item{empty_lines}{Character. Set to \code{"keep"} to keep or
+\code{"drop"} to drop empty lines.}
 
 \item{.envir}{[\code{environment}: \code{parent.frame()}]\cr Environment to evaluate each expression in. Expressions are
 evaluated from left to right. If \code{.x} is an environment, the expressions are
@@ -40,8 +43,9 @@ glued(
   "Her name is {name}, ",
   "and her age next year will be {age + 1}.",
   name = "Maru",
-  age = 6)
-  
+  age = 6
+)
+
 # And run operations with memories (beware!)
 glued("My name, {name}, has {n <- nchar(name); n} characters.
        If we multiply by ten, we'll have {10 * n} characters!")
