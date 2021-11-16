@@ -21,7 +21,8 @@ theme_lares(
   mg = 9,
   pal = 0,
   palette = NULL,
-  which = "fct"
+  which = "fc",
+  ...
 )
 }
 \arguments{
@@ -60,6 +61,8 @@ used as fill and the values will be used as colour.}
 
 \item{which}{Character. When \code{pal = 3}, select which colours should be
 added with the custom colours palette: fill, colour, text (fct) - first letters.}
+
+\item{...}{Additional parameters passed}
 }
 \value{
 Themed ggplot2 object
@@ -90,17 +93,9 @@ p + theme_lares(clean = TRUE)
 }
 }
 \seealso{
-Other Visualization: 
-\code{\link{distr}()},
-\code{\link{freqs_df}()},
-\code{\link{freqs_list}()},
-\code{\link{freqs_plot}()},
-\code{\link{freqs}()},
-\code{\link{gg_bars}()},
-\code{\link{noPlot}()},
-\code{\link{plot_chord}()},
-\code{\link{plot_survey}()},
-\code{\link{plot_timeline}()},
-\code{\link{tree_var}()}
+Other Themes: 
+\code{\link{gg_fill_customs}()},
+\code{\link{lares_pal}()},
+\code{\link{plot_palette}()}
 }
-\concept{Visualization}
+\concept{Themes}

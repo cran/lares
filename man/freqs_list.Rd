@@ -65,7 +65,7 @@ This is similar to the \href{http://vcg.github.io/upset/}{UpSet Plots}
 which may be used as an alternative to Venn diagrams.
 }
 \examples{
-\donttest{
+\dontrun{
 df <- dplyr::starwars
 head(df[, c(1, 4, 5, 12)], 10)
 
@@ -119,12 +119,10 @@ Other Visualization:
 \code{\link{freqs_df}()},
 \code{\link{freqs_plot}()},
 \code{\link{freqs}()},
-\code{\link{gg_bars}()},
 \code{\link{noPlot}()},
 \code{\link{plot_chord}()},
 \code{\link{plot_survey}()},
 \code{\link{plot_timeline}()},
-\code{\link{theme_lares}()},
 \code{\link{tree_var}()}
 }
 \concept{Exploratory}

@@ -81,7 +81,7 @@ Sys.unsetenv("LARES_FONT") # Temporal
 data(dft) # Titanic dataset
 
 # Relation for categorical/categorical values
-dft \%>\% distr(Survived, Sex)
+distr(dft, Survived, Sex)
 
 # Relation for categorical/numeric values
 dft \%>\%
@@ -125,12 +125,10 @@ Other Visualization:
 \code{\link{freqs_list}()},
 \code{\link{freqs_plot}()},
 \code{\link{freqs}()},
-\code{\link{gg_bars}()},
 \code{\link{noPlot}()},
 \code{\link{plot_chord}()},
 \code{\link{plot_survey}()},
 \code{\link{plot_timeline}()},
-\code{\link{theme_lares}()},
 \code{\link{tree_var}()}
 }
 \concept{Exploratory}

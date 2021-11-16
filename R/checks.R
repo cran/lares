@@ -41,8 +41,8 @@ check_opts <- function(inputs, opts,
     not(paste(
       "Your", input_name, vector2text(inputs),
       ifelse(length(inputs) > 1, "are", "is"),
-      "NOT valid; should match", toupper(type),
-      "of these options:\n ", vector2text(opts)
+      "NOT valid;", toupper(type), "should match",
+      "these options:\n ", vector2text(opts)
     ))
   }
   if (!quiet) {
@@ -61,6 +61,11 @@ check_opts <- function(inputs, opts,
 #' @param check Character. Attribute value
 #' @param stop Boolean. Stop if doesn't check?
 #' @return No return value, called for side effects.
+#' @examples
+#' test <- data.frame()
+#' attributes(test)
+#' check_attr(test, "class", "data.frame")
+#' # check_attr(test, "class", "not.data.frame")
 #' @export
 check_attr <- function(object, attr = "type", check = NULL, stop = TRUE) {
   if (is.null(check)) stop("You must set a valid check input")

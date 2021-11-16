@@ -11,16 +11,21 @@
 #' @inheritParams ohse
 #' @inheritParams numericalonly
 #' @param df Dataframe. It doesn't matter if it's got non-numerical
-#' columns: they will be filtered!
-#' @param method Character. Any of: c("pearson", "kendall", "spearman")
+#' columns: they will be filtered.
+#' @param method Character. Any of: c("pearson", "kendall", "spearman").
+#' @param use Character. Method for computing covariances in the presence
+#' of missing values. Check \code{stats::cor} for options.
 #' @param pvalue Boolean. Returns a list, with correlations and statistical
-#' significance (p-value) for each value
-#' @param dec Integer. Number of decimals to round correlations and p-values
+#' significance (p-value) for each value.
+#' @param half Boolean. Return only half of the matrix? The redundant
+#' symmetrical correlations will be \code{NA}.
+#' @param dec Integer. Number of decimals to round correlations and p-values.
 #' @param dummy Boolean. Should One Hot (Smart) Encoding (\code{ohse()})
 #' be applied to categorical columns?
 #' @param top Integer. Select top N most relevant variables? Filtered
-#' and sorted by mean of each variable's correlations
-#' @param ... Additional parameters to pass to \code{ohse()}
+#' and sorted by mean of each variable's correlations.
+#' @param ... Additional parameters passed to \code{ohse}, \code{corr},
+#' and/or \code{cor.test}.
 #' @return data.frame. Squared dimensions (N x N) to match every
 #' correlation between every \code{df} data.frame column/variable. Notice
 #' that when using \code{ohse()} you may get more dimensions.
@@ -28,7 +33,8 @@
 #' data(dft) # Titanic dataset
 #' df <- dft[, 2:5]
 #'
-#' corr(df)
+#' # Correlation matrix (without redundancy)
+#' corr(df, half = TRUE)
 #'
 #' # Ignore specific column
 #' corr(df, ignore = "Pclass")
@@ -42,7 +48,9 @@
 #' corr(df, method = "spearman")
 #' @export
 corr <- function(df, method = "pearson",
+                 use = "pairwise.complete.obs",
                  pvalue = FALSE,
+                 half = FALSE,
                  dec = 6,
                  ignore = NULL,
                  dummy = TRUE,
@@ -82,8 +90,8 @@ corr <- function(df, method = "pearson",
   d <- Filter(function(x) sd(x, na.rm = TRUE) != 0, d)
 
   # Correlations
-  rs <- suppressWarnings(cor(d, use = "pairwise.complete.obs", method = method))
-  rs[is.na(rs)] <- 0
+  rs <- suppressWarnings(cor(d, method = method, use = use))
+  if (half) for (i in 1:nrow(rs)) rs[1:i, i] <- NA
   cor <- round(data.frame(rs), dec)
   colnames(cor) <- row.names(cor) <- colnames(d)
 
@@ -101,7 +109,7 @@ corr <- function(df, method = "pearson",
 
   # Statistical significance (p-value)
   if (pvalue) {
-    return(list(cor = cor, pvalue = .cor_test_p(d, method = method)))
+    return(list(cor = cor, pvalue = .cor_test_p(d, method = method, ...)))
   }
 
   return(cor)
@@ -139,7 +147,7 @@ corr <- function(df, method = "pearson",
 #' @param zeroes Do you wish to keep zeroes in correlations too?
 #' @param save Boolean. Save output plot into working directory
 #' @param quiet Boolean. Keep quiet? If not, show messages
-#' @param ... Additional parameters passed to \code{corr}
+#' @param ... Additional parameters passed to \code{corr} and \code{cor.test}
 #' @return data.frame. With variables, correlation and p-value results
 #' for each feature, arranged by descending absolute correlation value.
 #' @examples
@@ -157,6 +165,7 @@ corr <- function(df, method = "pearson",
 #' dft %>% corr_var(Survived_TRUE, ceiling = 60, top = 15, ranks = TRUE)
 #' @export
 corr_var <- function(df, var,
+                     pvalue = TRUE,
                      ignore = NULL,
                      trim = 0,
                      clean = FALSE,
@@ -175,7 +184,9 @@ corr_var <- function(df, var,
   df <- select(df, -contains(paste0(var, "_log")))
 
   # Calculate correlations
-  rs <- corr(df, ignore = ignore, limit = limit, ...)
+  if (max_pvalue < 1) pvalue <- TRUE
+  if (plot & max_pvalue == 1) pvalue <- FALSE # No need to calculate
+  rs <- corr(df, half = TRUE, ignore = ignore, limit = limit, pvalue = pvalue, ...)
   if (is.data.frame(rs)) rs <- list(cor = rs, pvalue = mutate_all(rs, ~1))
 
   # Check if main variable exists
@@ -212,9 +223,9 @@ corr_var <- function(df, var,
       filter(.data$pvalue <= max_pvalue)
   }
 
-  # Limit automatically when more than 30 observations
-  if (is.na(top) & nrow(d) > 30) {
-    top <- 30
+  # Limit automatically when more than 20 observations
+  if (is.na(top) & nrow(d) > 20) {
+    top <- 20
     if (!quiet) {
       message(paste(
         "Automatically reduced results to the top", top, "variables.",
@@ -251,7 +262,7 @@ corr_var <- function(df, var,
       p <- ungroup(d) %>%
         filter(.data$variables != "pvalue") %>%
         mutate(
-          pos = ifelse(.data$corr > 0, TRUE, FALSE),
+          pos = ifelse(.data$corr > 0, "positive", "negative"),
           hjust = ifelse(abs(.data$corr) < max(abs(.data$corr)) / 1.5, -0.1, 1.1)
         ) %>%
         ggplot(aes(
@@ -263,14 +274,13 @@ corr_var <- function(df, var,
         geom_col(colour = "transparent") +
         coord_flip() +
         geom_text(aes(hjust = .data$hjust), size = 3, colour = "black") +
-        scale_fill_manual(values = c("FALSE" = "#E5586E", "TRUE" = "#59B3D2")) +
         guides(fill = "none") +
         labs(title = paste("Correlations of", var), x = NULL, y = NULL) +
         scale_y_continuous(
           expand = c(0, 0), position = "right",
           labels = function(x) sub("^(-)?0[.]", "\\1.", x)
         ) +
-        theme_lares(pal = 2)
+        theme_lares(pal = 4)
 
       if (!is.na(top) & top < original_n) {
         p <- p +
@@ -337,59 +347,19 @@ corr_var <- function(df, var,
 corr_cross <- function(df, plot = TRUE,
                        pvalue = TRUE, max_pvalue = 1,
                        type = 1, max = 1, top = 25, local = 1,
-                       ignore = NULL, contains = NA, grid = FALSE,
+                       ignore = NULL, contains = NA, grid = TRUE,
                        rm.na = FALSE, quiet = FALSE,
                        ...) {
   check_opts(type, 1:2)
 
-  if (sum(is.na(df)) & rm.na == FALSE & !quiet) {
-    warning("There are NA values in your data!")
-  }
+  cor <- corr(df, half = TRUE, ignore = ignore, pvalue = pvalue, ...)
 
-  cor <- corr(df, ignore = ignore, pvalue = pvalue, ...)
-
-  transf <- function(x, max = 1, contains = NA, rm.na = FALSE) {
-    x <- data.frame(x)
-    ret <- gather(x) %>%
-      mutate(mix = rep(colnames(x), length(x))) %>%
-      mutate(
-        p1 = rep(seq_along(x), each = length(x)),
-        p2 = rep(seq_along(x), length(x)),
-        aux = .data$p2 - .data$p1
-      ) %>%
-      filter(.data$aux > 0) %>%
-      mutate(rel = abs(.data$value)) %>%
-      filter(.data$rel < max) %>%
-      arrange(desc(.data$rel)) %>%
-      {
-        if (!is.na(contains[1])) {
-          filter(., grepl(
-            paste(
-              contains,
-              collapse = ifelse(length(contains) > 1, "|", "")
-            ),
-            paste(.data$mix, .data$key)
-          ))
-        } else {
-          .
-        }
-      } %>%
-      # add key?
-      {
-        if (rm.na) filter(., !grepl("_NAs", .data$mix)) else .
-      } %>%
-      filter(!grepl("_OTHER", .data$key)) %>%
-      rename(corr = .data$value) %>%
-      mutate(value = paste(.data$key, .data$mix)) %>%
-      select(.data$key, .data$mix, .data$corr)
-    return(ret)
-  }
-
+  cluster <- "cluster_" %in% contains
   if (!is.data.frame(cor)) {
-    ret <- transf(cor$cor, max = max, contains = contains, rm.na = rm.na)
-    aux <- transf(cor$pvalue, max = max, contains = contains, rm.na = rm.na)
+    ret <- .transf(cor$cor, max = max, contains = contains, cluster = cluster, rm.na = rm.na)
+    aux <- .transf(cor$pvalue, max = max, contains = contains, cluster = cluster, rm.na = rm.na)
   } else {
-    ret <- aux <- transf(cor, max = max, contains = contains, rm.na = rm.na)
+    ret <- aux <- .transf(cor, max = max, contains = contains, cluster = cluster, rm.na = rm.na)
     aux$corr <- 0
   }
 
@@ -434,44 +404,39 @@ corr_cross <- function(df, plot = TRUE,
         mutate(facet = gsub("_", "", .data$facet))
     }
 
-    good <- lares_pal("labels") %>%
-      filter(.data$values == "good") %>%
-      pull("fill")
-    bad <- lares_pal("labels") %>%
-      filter(.data$values == "bad") %>%
-      pull("fill")
-
     if (type == 1) {
       p <- ret %>%
         head(top) %>%
         mutate(
           label = paste(.data$key, "+", .data$mix),
           abs = abs(.data$corr),
-          sign = ifelse(.data$corr < 0, bad, good)
+          sign = ifelse(.data$corr < 0, "negative", "positive")
         ) %>%
         ggplot(aes(
           x = reorder(.data$label, .data$abs),
-          y = .data$abs,
-          fill = .data$sign
+          y = .data$abs
         )) +
-        geom_col(colour = "transparent") +
-        geom_text(aes(label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))),
-          size = 3, colour = "white", hjust = 1.1
+        geom_col(aes(fill = .data$sign)) +
+        geom_text(aes(
+          colour = .data$sign,
+          label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))
+        ),
+        size = 3, hjust = 1.1
         ) +
         coord_flip() +
-        guides(fill = "none") +
+        guides(fill = "none", colour = "none") +
         labs(
           title = "Ranked Cross-Correlations",
           subtitle = subtitle,
           x = NULL, y = NULL
         ) +
-        scale_fill_identity() +
         scale_y_continuous(
           expand = c(0, 0), position = "right",
           labels = function(x) sub("^(-)?0[.]", "\\1.", x)
         ) +
-        theme_lares(legend = "top")
-      if ((!is.na(contains)[1] & length(contains) == 1) | grid) {
+        theme_lares(pal = 4, ...)
+
+      if ((!is.na(contains)[1] & length(contains) == 1) & grid) {
         p <- p + facet_grid(.data$facet ~ ., scales = "free", space = "free")
       }
     }
@@ -517,16 +482,50 @@ corr_cross <- function(df, plot = TRUE,
   return(ret)
 }
 
+.transf <- function(x, max = 1, contains = NA, cluster = FALSE, rm.na = FALSE) {
+  aux <- gather(data.frame(x), "key", "value")
+  ret <- mutate(aux, mix = rep(unique(aux$key), length = nrow(aux))) %>%
+    mutate(p1 = cumsum(!duplicated(.data$mix))) %>%
+    group_by(.data$mix) %>%
+    mutate(p2 = row_number()) %>%
+    ungroup() %>%
+    filter(.data$p2 != .data$p1) %>%
+    mutate(rel = abs(.data$value)) %>%
+    filter(.data$rel < max) %>%
+    arrange(desc(.data$rel)) %>%
+    {
+      if (!is.na(contains[1])) {
+        filter(., grepl(
+          paste(contains, collapse = "|"),
+          paste(.data$mix)
+        ))
+      } else {
+        .
+      }
+    } %>%
+    {
+      if (rm.na) filter(., !grepl("_NAs", .data$mix)) else .
+    } %>%
+    filter(!grepl("_OTHER", .data$key)) %>%
+    rename(corr = .data$value) %>%
+    mutate(value = paste(.data$key, .data$mix)) %>%
+    select(.data$key, .data$mix, .data$corr)
+  return(ret)
+}
+
 
 # https://stackoverflow.com/questions/60512043/r-creating-a-p-value-matrix-with-missing-values
-.cor_test_p <- function(mat, method = "pearson") {
+.cor_test_p <- function(mat, method = "pearson", exact = TRUE, ...) {
   mat <- as.matrix(mat)
   n <- ncol(mat)
   p.mat <- matrix(NA, n, n)
   diag(p.mat) <- 0
   for (i in 1:(n - 1)) {
     for (j in (i + 1):n) {
-      error <- try(tmp <- cor.test(mat[, i], mat[, j], method = method), silent = TRUE)
+      error <- try(tmp <- cor.test(
+        mat[, i], mat[, j],
+        method = method, exact = exact, ...
+      ), silent = TRUE)
       if (class(error) == "try-error") {
         p.mat[i, j] <- NA
       } else {

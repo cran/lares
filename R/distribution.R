@@ -39,7 +39,7 @@
 #' data(dft) # Titanic dataset
 #'
 #' # Relation for categorical/categorical values
-#' dft %>% distr(Survived, Sex)
+#' distr(dft, Survived, Sex)
 #'
 #' # Relation for categorical/numeric values
 #' dft %>%
@@ -266,7 +266,7 @@ distr <- function(data, ...,
         .data$row
       ))
     )
-  if (length(unique(value)) > top & !is.numeric(.data$value)) {
+  if (length(unique(value)) > top & !is.numeric(value)) {
     message(paste("Filtering the", top, "most frequent values. Use 'top' to overrule."))
     which <- freqs(df, .data$value) %>% slice(1:top)
     freqs <- freqs %>%
@@ -314,8 +314,7 @@ distr <- function(data, ...,
     }
     # Custom colours if wanted...
     if (custom_colours) {
-      count <- count +
-        suppressWarnings(gg_fill_customs())
+      count <- count + suppressWarnings(gg_fill_customs())
     }
   }
 
@@ -360,8 +359,7 @@ distr <- function(data, ...,
     }
     # Custom colours if wanted...
     if (custom_colours) {
-      prop <- prop +
-        suppressMessages(gg_fill_customs())
+      prop <- prop + suppressMessages(gg_fill_customs())
     }
   }
 

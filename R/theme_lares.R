@@ -10,7 +10,7 @@
 #' available on any modern system, so it's "free"-ish; plus, it is a condensed font
 #' with solid default kerning pairs and geometric numbers.
 #'
-#' @family Visualization
+#' @family Themes
 #' @param font,size Character and numeric. Base font family and base size for texts.
 #' \code{Arial Narrow} is set by default when the library is loaded; you may change it
 #' with \code{Sys.getenv("LARES_FONT" = "X")} or by using this parameter manually.
@@ -36,6 +36,7 @@
 #' used as fill and the values will be used as colour.
 #' @param which Character. When \code{pal = 3}, select which colours should be
 #' added with the custom colours palette: fill, colour, text (fct) - first letters.
+#' @param ... Additional parameters passed
 #' @return Themed ggplot2 object
 #' @examples
 #' \donttest{
@@ -66,7 +67,8 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
                         mg = 9,
                         pal = 0,
                         palette = NULL,
-                        which = "fct") {
+                        which = "fc",
+                        ...) {
 
   # Start from theme_minimal()
   ret <- theme_minimal(base_size = size)
@@ -93,21 +95,6 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
   update_geom_defaults("boxplot", list(fill = main_colour, alpha = 0.9))
   # update_geom_defaults("text_repel", list(family = font))
 
-  if (inherits(grid, "character") | grid == TRUE) {
-    grid_col <- "#CCCCCC"
-    ret <- ret + theme(panel.grid = element_line(color = grid_col, size = 0.2))
-    ret <- ret + theme(panel.grid.major = element_line(color = grid_col, size = 0.1))
-    ret <- ret + theme(panel.grid.minor = element_line(color = grid_col, size = 0.05))
-    if (inherits(grid, "character")) {
-      if (regexpr("X", grid)[1] < 0) ret <- ret + theme(panel.grid.major.x = element_blank())
-      if (regexpr("Y", grid)[1] < 0) ret <- ret + theme(panel.grid.major.y = element_blank())
-      if (regexpr("x", grid)[1] < 0) ret <- ret + theme(panel.grid.minor.x = element_blank())
-      if (regexpr("y", grid)[1] < 0) ret <- ret + theme(panel.grid.minor.y = element_blank())
-    }
-  } else {
-    ret <- ret + theme(panel.grid = element_blank())
-  }
-
   # Legend
   aux <- ifelse("top" %in% legend, "right", "left")
   xj <- switch(tolower(substr(aux, 1, 1)),
@@ -128,16 +115,29 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
   )
   if (!is.null(legend)) {
     ret <- ret + theme(
-      legend.title = element_text(
-        color = soft_colour, size = size * 0.9, face = "bold"
-      ),
+      legend.title = element_text(color = soft_colour, size = size * 0.9, face = "bold"),
       legend.position = legend,
       legend.justification = c(
         ifelse(legend %in% c("top", "bottom"), 0, .5),
-        ifelse(legend == "top", 0, .5)
+        ifelse(legend == "top", 0, ifelse(legend %in% "left", 1, .5))
       ),
       legend.margin = margin(-3, 0, -4, 0)
     )
+  }
+
+  if (inherits(grid, "character") | grid == TRUE) {
+    grid_col <- "#CCCCCC"
+    ret <- ret + theme(panel.grid = element_line(color = grid_col, size = 0.2))
+    ret <- ret + theme(panel.grid.major = element_line(color = grid_col, size = 0.1))
+    ret <- ret + theme(panel.grid.minor = element_line(color = grid_col, size = 0.05))
+    if (inherits(grid, "character")) {
+      if (regexpr("X", grid)[1] < 0) ret <- ret + theme(panel.grid.major.x = element_blank())
+      if (regexpr("Y", grid)[1] < 0) ret <- ret + theme(panel.grid.major.y = element_blank())
+      if (regexpr("x", grid)[1] < 0) ret <- ret + theme(panel.grid.minor.x = element_blank())
+      if (regexpr("y", grid)[1] < 0) ret <- ret + theme(panel.grid.minor.y = element_blank())
+    }
+  } else {
+    ret <- ret + theme(panel.grid = element_blank())
   }
 
   # Axis lines
@@ -260,15 +260,111 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
     ret <- list(ret, scale_fill_manual(values = names(colours_pal)))
   }
 
-  # Custom Palette Colours defined in colour_palettes.R (personal use)
+  # Custom palette defined in colour_palettes.R and/or lares.colours.custom options
   if (pal == 4) {
-    ret <- list(ret)
-    if (grepl("f", which)) ret <- append(ret, gg_fill_customs())
-    if (grepl("c", which)) ret <- append(ret, gg_colour_customs())
-    if (grepl("t", which)) ret <- append(ret, gg_text_customs())
+    which <- tolower(which)
+    if ((grepl("c", which) & grepl("t", which))) {
+      stop("In your 'which' parameter, pass only 'c' OR 't', not both")
+    }
+    # FIX: Scale for 'fill' is already present. Adding another scale for 'fill',
+    # which will replace the existing scale. (not being suppressed)
+    suppressMessages({
+      ret <- list(ret)
+      if (grepl("f", which)) ret <- append(ret, gg_fill_customs())
+      if (grepl("c", which)) ret <- append(ret, gg_colour_customs())
+      if (grepl("t", which)) ret <- append(ret, gg_text_customs())
+    })
   }
 
   return(ret)
+}
+
+####################################################################
+#' Custom fill, colour and text colours for ggplot2
+#'
+#' This function lets the user use pre-defined default colours.
+#' Check your \code{lares_pal()$labels} scale. Feel free to use
+#' \code{gg_vals()} to debug colours used in latest plot.
+#'
+#' Notice that when the layer defined is any of GeomPoint, GeomLine,
+#' GeomText or GeomLabel, \code{gg_colour_customs()} will force
+#' \code{column = "fill"} parameter.
+#'
+#' @family Themes
+#' @param column Character. Select any of "fill" or "colour" to use on
+#' your \code{lares_pal()$labels} palette.
+#' @param ... Allow additional parameters not used.
+#' @examples
+#' library("ggplot2")
+#' # Generic plot function to run examples to
+#' run_plot <- function(add_fxs = TRUE) {
+#'   p <- data.frame(station = c("spring", "summer", "fall", "winter"), num = 1:4) %>%
+#'     ggplot(aes(x = station, y = num, fill = station)) +
+#'     geom_col() +
+#'     geom_text(aes(y = 0.5, label = num, colour = station), size = 6)
+#'   if (add_fxs) p <- p + gg_fill_customs() + gg_colour_customs()
+#'   return(p)
+#' }
+#' # Default colours
+#' run_plot()
+#' # Check last colours used
+#' gg_vals("fill", "fill")
+#' gg_vals("colour", "colour")
+#' # Change any default colour
+#' options("lares.colours.custom" = data.frame(
+#'   values = c("summer", "winter"),
+#'   fill = c("pink", "black"),
+#'   colour = c("black", "white")
+#' ))
+#' run_plot()
+#' # Check last colours used
+#' gg_vals("fill", "fill")
+#' gg_vals("colour", "colour")
+#' # Reset to default colours
+#' options("lares.colours.custom" = NULL)
+#' # Notice you can use 'pal = 4' argument on theme_lares() too
+#' run_plot(add_fxs = FALSE) + theme_lares(pal = 4)
+#' @return Same as \code{scale_fill_manual} or \code{scale_colour_manual}
+#' but with custom palette applied.
+#' @export
+gg_fill_customs <- function(column = "fill", ...) {
+  scale_fill_manual(values = gg_vals("fill", column), aesthetics = "fill")
+}
+
+#' @rdname gg_fill_customs
+#' @export
+gg_colour_customs <- function(column = "colour", ...) {
+  scale_color_manual(values = gg_vals("colour", column), aesthetics = "colour")
+}
+
+#' @rdname gg_fill_customs
+#' @export
+gg_text_customs <- function(column = "colour", ...) {
+  scale_color_manual(values = gg_vals("label", column), aesthetics = "colour")
+}
+
+#' @rdname gg_fill_customs
+#' @param layer Character. Select any of "fill", "colour", or "label" to get the
+#' layer containing the colours labels you wish to colour.
+#' @export
+gg_vals <- function(layer = "fill", column = layer) {
+  check_opts(layer, c("fill", "colour", "label"))
+  check_opts(column, c("fill", "colour"))
+  x <- last_plot()
+  cols <- lares_pal()$labels
+  # Get colours present in data
+  labs <- unlist(lapply(x$layers, function(y) as_label(y$mapping[[layer]])))
+  labs <- c(labs, as_label(x$mapping[[layer]]))
+  labs <- labs[!labs %in% c("NULL", "<uneval>")]
+  cols <- cols[cols$values %in% unique(unlist(select(x$data, any_of(labs)))), ]
+  # If point, line, text, label, force using fill colours
+  invert <- c("GeomPoint", "GeomLine", "GeomText", "GeomLabel")
+  layers_present <- unique(unlist(lapply(x$layers, function(y) class(y$geom))))
+  if (any(invert %in% layers_present)) column <- "fill"
+  # Final values vector
+  values <- as.character(t(cols[, column])[1, ])
+  names(values) <- cols$values
+  return(values)
 }
 
 .font_global <- function(font, quiet = TRUE, when_not = NA) {

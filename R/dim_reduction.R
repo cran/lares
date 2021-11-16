@@ -28,15 +28,17 @@ reduce_pca <- function(df, n = NULL, ignore = NULL,
                        comb = c(1, 2), quiet = FALSE,
                        plot = TRUE, ...) {
   if (isTRUE(is.na(ignore)[1])) ignore <- NULL
+  ignore <- unique(ignore)
   df <- .prepare_reduce(df, ignore = ignore, ...)
-  
+
   if (sum(is.na(df)) > 0) {
     if (!quiet) message("Replacing NA values with column's means...")
     df <- mutate_all(df, ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x))
   }
 
   PCA <- list()
-  pca <- prcomp(select(df, -any_of(ignore)), ...)
+  temp <- select(df, -any_of(ignore))
+  pca <- prcomp(temp, ...)
   PCA$pca_explained <- round(100 * pca$sdev^2 / sum(pca$sdev^2), 4)
   PCA$pcadf <- data.frame(pca$x)[, PCA$pca_explained > 0.01]
   PCA$pcadf <- as_tibble(cbind(select(as.data.frame(df), any_of(ignore)), PCA$pcadf))
@@ -114,12 +116,14 @@ reduce_tsne <- function(df, n = 2, ignore = NULL,
                         quiet = FALSE,
                         plot = TRUE, ...) {
   try_require("Rtsne")
-
+  if (isTRUE(is.na(ignore)[1])) ignore <- NULL
+  ignore <- unique(ignore)
   df <- .prepare_reduce(df, ignore = ignore, ...)
 
   tSNE <- list()
-  
-  tSNE$tsne <- Rtsne(select(df, -any_of(ignore)), dims = n, verbose = FALSE, ...)
+
+  temp <- select(df, -any_of(ignore))
+  tSNE$tsne <- Rtsne(temp, dims = n, verbose = FALSE, ...)
 
   tSNE$tsne$df <- as_tibble(
     data.frame(

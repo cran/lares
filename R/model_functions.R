@@ -92,7 +92,7 @@
 #' dft <- subset(dft, select = -c(Ticket, PassengerId, Cabin))
 #'
 #' # Classification: Binomial - 2 Classes
-#' r <- h2o_automl(dft, y = Survived, max_models = 1, impute = FALSE, target = "TRUE")
+#' r <- h2o_automl(dft, y = Survived, max_models = 1, impute = FALSE, target = "TRUE", alarm = FALSE)
 #'
 #' # Let's see all the stuff we have inside:
 #' lapply(r, names)
@@ -138,7 +138,7 @@ h2o_automl <- function(df, y = "tag",
                        print = TRUE,
                        save = FALSE,
                        subdir = NA,
-                       project = "ML Project",
+                       project = "AutoML Results",
                        ...) {
   tic(id = "h2o_automl")
   on.exit(toc(id = "h2o_automl", msg = "Process duration:", quiet = quiet))
@@ -293,7 +293,6 @@ print.h2o_automl <- function(x, importance = TRUE, ...) {
   if (!inherits(x, "h2o_automl")) {
     stop("Object must be class h2o_automl")
   }
-
   aux <- list()
   selected <- which(as.vector(x$leaderboard$model_id) == x$model_name)
   n_models <- nrow(x$leaderboard)

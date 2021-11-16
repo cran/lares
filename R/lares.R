@@ -30,7 +30,8 @@
 #' @importFrom rvest html_node html_nodes html_attrs html_attr html_table html_text
 #' @importFrom stats cor quantile complete.cases na.omit sd median dist end lm predict
 #' reorder start kmeans var xtabs as.formula prcomp p.adjust pt model.matrix qt cor.test
-#' @import stringr
+#' @importFrom stringr fixed str_count str_length str_pad str_replace_all str_split
+#' str_to_title word
 #' @importFrom tidyr gather spread
 #' @importFrom utils head tail packageVersion URLencode capture.output data download.file
 #' globalVariables installed.packages write.table install.packages remove.packages object.size
@@ -119,9 +120,9 @@ recommended <- list(
   wordcloud = c("wordcloud", "textplot")
 )
 
-# For read.file function... will be deprecated!
-temp <- c("read.dta13", "read.spss")
+# For read.file function... deprecated
+# c("read.dta13", "read.spss")
 
 if (getRversion() >= "2.15.1") {
-  globalVariables(c(as.vector(unlist(recommended)), temp, "."))
+  globalVariables(c(as.vector(unlist(recommended)), "."))
 }

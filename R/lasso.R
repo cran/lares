@@ -34,7 +34,7 @@
 #' }
 #' @export
 lasso_vars <- function(df, variable,
-                       ignore = NA,
+                       ignore = NULL,
                        nlambdas = 100,
                        nfolds = 10,
                        top = 20,
@@ -46,20 +46,16 @@ lasso_vars <- function(df, variable,
   on.exit(set.seed(seed))
   var <- enquo(variable)
   df <- select(df, !!var, everything())
-
-  if (!is.na(ignore[1])) {
-    ignore <- c(ignore, as_label(var))
-  } else {
-    ignore <- as_label(var)
-  }
+  if (!is.null(ignore)) ignore <- c(ignore, as_label(var))
 
   # Run one-hot-smart-encoding
-  temp <- data.frame(as.vector(df[, 1]), ohse(df, ignore = ignore, quiet = quiet, ...))
+  temp <- data.frame(as.vector(df[, 1]), ohse(df[, -1], ignore = ignore, quiet = quiet, ...))
   colnames(temp)[1] <- "main"
+  
   temp <- temp %>%
     filter(!is.na(.data$main)) %>%
     mutate(main = as.vector(base::scale(as.numeric(.data$main), scale = FALSE, center = TRUE)))
-
+  
   if (!quiet) message(">>> Searching for optimal lambda with CV...")
   lasso_logistic <- h2o.glm(
     alpha = 1,
@@ -92,40 +88,36 @@ lasso_vars <- function(df, variable,
       .data$names == "Intercept", 0, .data$standardized_coefficients
     )))
 
+  t_lasso_model_coeff <- mutate(
+    t_lasso_model_coeff,
+    abs = abs(.data$standardized_coefficients),
+    prc = .data$abs / sum(.data$abs),
+    coef = ifelse(.data$coefficients > 0, "positive", "negative")
+  ) %>%
+    filter(.data$prc > 0)
   if (!quiet) message(">>> Generating plots for ", as_label(var), "...")
   if (nrow(t_lasso_model_coeff) > top & !quiet) {
     message(paste("- Plotting only the", top, "most relevant features..."))
   }
-  good <- lares_pal("labels") %>%
-    filter(.data$values == "good") %>%
-    pull("fill")
-  bad <- lares_pal("labels") %>%
-    filter(.data$values == "bad") %>%
-    pull("fill")
+
   p <- t_lasso_model_coeff %>%
     head(top) %>%
-    filter(.data$names != "Intercept") %>%
-    mutate(
-      abs = abs(.data$standardized_coefficients),
-      prc = .data$abs / sum(.data$abs),
-      coef = ifelse(.data$coefficients > 0, good, bad)
-    ) %>%
-    filter(.data$prc > 0) %>%
     ggplot(aes(
       x = reorder(.data$names, .data$prc),
-      y = abs(.data$standardized_coefficients),
-      fill = .data$coef
+      y = abs(.data$standardized_coefficients)
     )) +
-    scale_fill_identity() +
+    geom_col(aes(fill = .data$coef)) +
     coord_flip() +
-    geom_col() +
     labs(
       x = NULL, y = "Absolute Standarized Coefficient",
       title = "Most Relevant Features (Lasso Regression)",
-      subtitle = paste("RSQ =", round(rsq$metrics$rsq, 4)),
+      subtitle = sprintf(
+        "Response variable: %s | RSQ = %s",
+        as_label(var), round(rsq$metrics$rsq, 4)
+      ),
       fill = "Coeff > 0"
     ) +
-    theme_lares(legend = "top", pal = 2) +
+    theme_lares(legend = "none", pal = 4) +
     scale_y_percent(expand = c(0, 0), position = "right")
 
   toc("lasso_vars", quiet = quiet)

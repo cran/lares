@@ -33,11 +33,9 @@ Other Visualization:
 \code{\link{freqs_list}()},
 \code{\link{freqs_plot}()},
 \code{\link{freqs}()},
-\code{\link{gg_bars}()},
 \code{\link{plot_chord}()},
 \code{\link{plot_survey}()},
 \code{\link{plot_timeline}()},
-\code{\link{theme_lares}()},
 \code{\link{tree_var}()}
 }
 \concept{Visualization}

@@ -34,7 +34,7 @@ h2o_automl(
   print = TRUE,
   save = FALSE,
   subdir = NA,
-  project = "ML Project",
+  project = "AutoML Results",
   ...
 )
 
@@ -92,7 +92,8 @@ have in \code{'tag'} (more than: regression; less than: classification)}
 guarantee reproducibility if max_models is used because max_time is
 resource limited.}
 
-\item{nfolds}{Number of folds for k-fold cross-validation. Defaults to 5. Use 0 to disable cross-validation; this will also disable Stacked Ensemble (thus decreasing the overall model performance).}
+\item{nfolds}{Number of folds for k-fold cross-validation. Must be >= 2; defaults to 5. Use 0 to disable cross-validation; 
+this will also disable Stacked Ensemble (thus decreasing the overall model performance).}
 
 \item{max_models, max_time}{Numeric. Max number of models and seconds
 you wish for the function to iterate. Note that max_models guarantees
@@ -170,7 +171,7 @@ data(dft) # Titanic dataset
 dft <- subset(dft, select = -c(Ticket, PassengerId, Cabin))
 
 # Classification: Binomial - 2 Classes
-r <- h2o_automl(dft, y = Survived, max_models = 1, impute = FALSE, target = "TRUE")
+r <- h2o_automl(dft, y = Survived, max_models = 1, impute = FALSE, target = "TRUE", alarm = FALSE)
 
 # Let's see all the stuff we have inside:
 lapply(r, names)
