@@ -1,4 +1,4 @@
-fd85f473378fbadb1acea6d66a2c02a8 *DESCRIPTION
+5adf35ad48c9e81f02b4f97ed4629810 *DESCRIPTION
 9a75e2d62bd514a59e1a29b933d93021 *NAMESPACE
 c4628fc797b8cda935a4cd2de81eab3f *R/apis.R
 b762a2aa0e6d4946653944fec6819a05 *R/audio.R
@@ -7,7 +7,7 @@ b762a2aa0e6d4946653944fec6819a05 *R/audio.R
 363e9212b0e07887345c63111392d1ad *R/clusters.R
 0ecd060491012d4d1aacb8e2c7b442f2 *R/colour_palettes.R
 d7e3cb835f3b9ce2e84bd177c0eedc30 *R/confidence.R
-52fad6224d1e6a2fa3d47065c6cf21a3 *R/correlations.R
+e8f3001bff127515b4fe9a64a4a20c3d *R/correlations.R
 e63b1b04d4165a7080f83b81f1d14892 *R/cran.R
 6c5f681cdc739a3adca84bd89a4b1cef *R/credentials.R
 c17d81135e5928b528e0786dd4953697 *R/crosstab.R
@@ -39,8 +39,8 @@ c890ce2fe4fdb695324c9c7ec9128682 *R/model_metrics.R
 62acd5bbbdb724bd33bf82de3b5e80aa *R/model_predict.R
 ed873cf84b48b5fd33bf5ed507a43c7e *R/model_preprocessing.R
 c8095265706b559511c2371a5c63db76 *R/object_detection.R
-53fe4eeec3f5696552d105a67fc3b750 *R/onehotencoding.R
-3a4b1cc3d09ce825bcb717d78f9f0095 *R/other_functions.R
+821100116663dec9805005819f2c5d8c *R/onehotencoding.R
+a219edf38f03765488dc581905d85eb5 *R/other_functions.R
 d15d6790aaa3cfa78baa21d9b18d169b *R/other_plots.R
 0392256e58f6f95301103ebbbd23581d *R/outliers.R
 f6a4d1c79b009755ae626f3d8987c6ee *R/plot_scales.R
@@ -70,13 +70,13 @@ fb2872200e7b3ec445f724aaf4d0767c *data/dft.RData
 27293ffd783b9f1cb50caaf1a147be7e *inst/_pkgdown.yml
 b40ff8a87e7f7cada0b31bb071780b8a *inst/doc/h2o_automl.R
 00fd5b0a6d526a44d3e2513203f2a5fe *inst/doc/h2o_automl.Rmd
-3c76d06f0620912c1a82e2f8302e8883 *inst/doc/h2o_automl.html
+3e23ac29b42939076d8aa1545811e915 *inst/doc/h2o_automl.html
 8cf91783cd4a4e7fe2c25d80d127028d *inst/docs/config.yml
 dea76c9731552aa757a8f0383dba17e4 *inst/docs/dummyPortfolio.xlsx
 b71227f813987aef5c7a80644618862c *inst/docs/stocksReport.Rmd
 19dc6fa54be00402c1152eabbf6801b2 *man/ROC.Rd
 a5708738a77b49b01578b71e2e50ebaa *man/autoline.Rd
-e3c146e136a1f8449d43e9ae4a57fe5e *man/balance_data.Rd
+6ab754dd9cedaca9a6ef72dd5ea2e07a *man/balance_data.Rd
 663ce07e45dbd536d80d386029aeabb2 *man/bindfiles.Rd
 2cb5d7c77a80cfdec644a67a134035a3 *man/bring_api.Rd
 5048bc7849435ccfd5fe3fb95bf007f4 *man/cache_write.Rd
@@ -102,7 +102,7 @@ a28248218cd56b47190ec6265b52af44 *man/dalex_local.Rd
 1b97dc7b06c9acbafc5f83180537b870 *man/dalex_residuals.Rd
 0877f3ecfe6c9ac4fa81f8dc60a8aa91 *man/dalex_variable.Rd
 c62a80dc31967e0d4d5b1439e97d1930 *man/date_cuts.Rd
-5ffb82b1e58011f2c985393f75db167c *man/date_feats.Rd
+db0c9cadc786afbb49bfa799a6c466e0 *man/date_feats.Rd
 11274c52ca39bbf7be03d9f849ac8e36 *man/db_download.Rd
 fb53b2c5b893f1c77451587b707e674c *man/db_upload.Rd
 a522854864d55fe2a4be47c6093d724f *man/df_str.Rd
