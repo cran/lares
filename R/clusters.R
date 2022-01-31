@@ -10,6 +10,7 @@
 #' when clusters are in different shapes such as elliptical clusters.
 #'
 #' @family Clusters
+#' @inheritParams stats::kmeans
 #' @param df Dataframe
 #' @param k Integer. Number of clusters
 #' @param limit Integer. How many clusters should be considered?
@@ -65,8 +66,8 @@
 #' @export
 clusterKmeans <- function(df, k = NULL, limit = 15, drop_na = TRUE,
                           ignore = NULL, ohse = TRUE, norm = TRUE,
-                          dim_red = "PCA",
-                          comb = c(1, 2), seed = 123,
+                          algorithm = c("Hartigan-Wong", "Lloyd", "Forgy", "MacQueen"),
+                          dim_red = "PCA", comb = c(1, 2), seed = 123,
                           quiet = FALSE, ...) {
   on.exit(set.seed(seed))
   check_opts(dim_red, c("PCA", "tSNE", "all", "none"))
@@ -92,7 +93,10 @@ clusterKmeans <- function(df, k = NULL, limit = 15, drop_na = TRUE,
 
   # Determine number of clusters (n) using WSS methodology
   wss <- sum(apply(df, 2, var)) * (nrow(df) - 1)
-  for (i in 2:limit) wss[i] <- sum(kmeans(df, centers = i)$withinss)
+  limit <- min(nrow(df) - 1, limit)
+  for (i in 2:limit) wss[i] <- suppressWarnings(
+    sum(kmeans(df, centers = i, algorithm = algorithm)$withinss)
+  )
   nclusters <- data.frame(n = c(1:limit), wss = wss)
   nclusters_plot <- ggplot(nclusters, aes(x = .data$n, y = .data$wss)) +
     geom_line() +
@@ -123,7 +127,7 @@ clusterKmeans <- function(df, k = NULL, limit = 15, drop_na = TRUE,
     results[["nclusters_plot"]] <- nclusters_plot
 
     # K-Means Cluster Analysis
-    fit <- kmeans(df, k, iter.max = limit)
+    fit <- kmeans(df, k, algorithm = algorithm, iter.max = limit)
     results[["fit"]] <- fit
     # Append cluster assignment
     df <- data.frame(results[["df"]], cluster = as.factor(fit$cluster))

@@ -19,7 +19,7 @@ daily_stocks(hist, trans, tickers = NA, window = "MAX")
 data.frame. Processed at date and symbol level.
 }
 \description{
-This function creates a dataframe will all relevant metrics and values,
+This function creates a dataframe with all relevant metrics and values,
 for each ticker or symbol, for every day since inception.
 }
 \seealso{
@@ -27,6 +27,7 @@ Other Investment:
 \code{\link{daily_portfolio}()},
 \code{\link{etf_sector}()},
 \code{\link{splot_change}()},
+\code{\link{splot_divs}()},
 \code{\link{splot_etf}()},
 \code{\link{splot_growth}()},
 \code{\link{splot_roi}()},

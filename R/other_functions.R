@@ -28,30 +28,29 @@ try_require <- function(package, stop = TRUE) {
 }
 
 ####################################################################
-#' Convert Date into Year-Month (YYYY-MM)
+#' Convert Date into Year-Month, Year-Quarter or Year-Week Format
 #'
-#' This function lets the user convert a date into YYYY-MM format
+#' This function lets the user convert a date into YYYY-MM, YYYY-QX,
+#' or YYYY-WW format easily.
 #'
 #' @family Data Wrangling
 #' @param date Date vector. Date to transform format.
+#' 
 #' @return Vector with dates reformatted
 #' @examples
 #' year_month(Sys.Date())
+#' year_quarter(Sys.Date())
+#' year_week(Sys.Date())
 #' @export
 year_month <- function(date) {
   paste(year(date), str_pad(lubridate::month(date), 2, pad = "0"), sep = "-")
 }
-
-####################################################################
-#' Convert Date into Year-Week (YYYY-WW)
-#'
-#' This function lets the user convert a date into YYYY-WW format
-#'
-#' @family Data Wrangling
-#' @param date Date. Date we wish to transform
-#' @return Vector with dates reformatted
-#' @examples
-#' year_week(Sys.Date())
+#' @rdname year_month
+#' @export
+year_quarter <- function(date) {
+  paste(year(date), date_cuts(date, type = "Q"), sep = "-")
+}
+#' @rdname year_month
 #' @export
 year_week <- function(date) {
   paste(year(date), str_pad(lubridate::week(date), 2, pad = "0"), sep = "-")
@@ -417,6 +416,7 @@ balance_data <- function(df, variable, rate = 1, target = "auto", seed = 0, quie
   on.exit(set.seed(seed))
   var <- enquo(variable)
   variable <- rlang::as_label(var)
+  stopifnot(variable %in% names(df))
   names(df)[names(df) == variable] <- "tag"
   tags <- group_by(df, .data$tag) %>%
     summarize(n = n()) %>%
@@ -650,7 +650,9 @@ replaceall <- function(df, original, change, which = "all",
     stop("Vectors original and change should have the same length!")
   }
   if (length(unique(original)) != length(original)) {
-    aux <- freqs(dic, original) %>% filter(.data$n > 1) %>% .$original
+    aux <- freqs(dic, original) %>%
+      filter(.data$n > 1) %>%
+      .$original
     stop("You have repeated original values to replace: ", vector2text(aux))
   }
   if (which[1] != "all") {
@@ -1535,7 +1537,7 @@ spread_list <- function(df, col, str = NULL, replace = TRUE) {
   # Non-named list columns
   if (sum(nonames) == nrow(df)) {
     binded <- select(df, !!var) %>%
-      mutate(temp_cross_id = 1:nrow(df)) %>%
+      mutate(temp_cross_id = row_number()) %>%
       tidyr::unnest_longer(!!var) %>%
       mutate(key = TRUE) %>%
       tidyr::spread(key = !!var, value = .data$key) %>%
@@ -1552,7 +1554,7 @@ spread_list <- function(df, col, str = NULL, replace = TRUE) {
   ids <- which(colnames(binded) == "temp_cross_id")
   colnames(binded)[-ids] <- paste0(str, colnames(binded))[-ids]
   done <- df %>%
-    mutate(temp_cross_id = 1:nrow(df)) %>%
+    mutate(temp_cross_id = row_number()) %>%
     left_join(binded, "temp_cross_id") %>%
     select(-.data$temp_cross_id)
 

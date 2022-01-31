@@ -10,7 +10,7 @@ stocks_hist(
   from = Sys.Date() - 365,
   to = Sys.Date(),
   today = TRUE,
-  tax = 30,
+  tax = 15,
   parg = FALSE,
   cache = TRUE,
   quiet = FALSE
@@ -61,6 +61,7 @@ Other Investment:
 \code{\link{daily_stocks}()},
 \code{\link{etf_sector}()},
 \code{\link{splot_change}()},
+\code{\link{splot_divs}()},
 \code{\link{splot_etf}()},
 \code{\link{splot_growth}()},
 \code{\link{splot_roi}()},

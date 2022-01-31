@@ -7,7 +7,7 @@
 splot_change(
   p,
   s,
-  weighted = TRUE,
+  rel = TRUE,
   group = FALSE,
   n_days = 365,
   keep_old = FALSE,
@@ -19,8 +19,8 @@ splot_change(
 
 \item{s}{Dataframe. Result from \code{daily_stocks()}}
 
-\item{weighted}{Boolean. Should variation values be weighted to the
-portfolio (or simply compared with value since inception)?}
+\item{rel}{Boolean. Relative delta values (weighted with portfolio)?
+If not, absolute monetary delta values.}
 
 \item{group}{Boolean. Group stocks by stocks type?}
 
@@ -43,6 +43,7 @@ Other Investment:
 \code{\link{daily_portfolio}()},
 \code{\link{daily_stocks}()},
 \code{\link{etf_sector}()},
+\code{\link{splot_divs}()},
 \code{\link{splot_etf}()},
 \code{\link{splot_growth}()},
 \code{\link{splot_roi}()},
@@ -55,6 +56,7 @@ Other Investment:
 \code{\link{stocks_report}()}
 
 Other Investment Plots: 
+\code{\link{splot_divs}()},
 \code{\link{splot_etf}()},
 \code{\link{splot_growth}()},
 \code{\link{splot_roi}()},
