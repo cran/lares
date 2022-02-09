@@ -3,6 +3,7 @@ knitr::opts_chunk$set(
   collapse = TRUE, comment = "#>", results = "hide",
   fig.width = 7.1, fig.height = 5.5
 )
+h2o::h2o.init() # Just to be sure
 
 ## ----load, eval=TRUE----------------------------------------------------------
 # install.packages("lares")
