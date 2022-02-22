@@ -37,11 +37,9 @@ Other Data Wrangling:
 \code{\link{impute}()},
 \code{\link{left}()},
 \code{\link{normalize}()},
-\code{\link{numericalonly}()},
 \code{\link{ohe_commas}()},
 \code{\link{ohse}()},
 \code{\link{removenacols}()},
-\code{\link{removenarows}()},
 \code{\link{replaceall}()},
 \code{\link{textFeats}()},
 \code{\link{textTokenizer}()},
@@ -55,13 +53,11 @@ Other Feature Engineering:
 Other Scrapper: 
 \code{\link{filesGD}()},
 \code{\link{get_mp3}()},
+\code{\link{gtrends_related}()},
 \code{\link{ip_data}()},
 \code{\link{readGS}()},
 \code{\link{splot_etf}()},
-\code{\link{stocks_hist}()},
-\code{\link{stocks_quote}()},
-\code{\link{trendsRelated}()},
-\code{\link{writeGS}()}
+\code{\link{stocks_quote}()}
 
 Other One Hot Encoding: 
 \code{\link{date_feats}()},

@@ -2,7 +2,8 @@
 % Please edit documentation in R/other_functions.R
 \name{formatNum}
 \alias{formatNum}
-\title{Nicely Format Numerical Values}
+\alias{formatHTML}
+\title{Nicely Format Texts and Numericals}
 \usage{
 formatNum(
   x,
@@ -15,6 +16,8 @@ formatNum(
   abbr = FALSE,
   ...
 )
+
+formatHTML(text, color = "black", size = 20, bold = FALSE)
 }
 \arguments{
 \item{x}{Numerical Vector}
@@ -37,12 +40,26 @@ to set this parameter globally.}
 the `decimals` parameter to set abbr's \code{n}(-1) parameter.}
 
 \item{...}{Additional lazy eval parameters.}
+
+\item{text}{Character. Strings to format.}
+
+\item{color}{Character. Hex colour code.}
+
+\item{size}{Numeric. Text size.}
+
+\item{bold}{Boolean. Should the text be bold?}
 }
 \value{
 Character. String vector with reformatted continuous numbers
+
+String with format characters included.
 }
 \description{
 This function lets the user format numerical values nicely
+
+Format any character string to HTML or markdown format. We
+recommend using this format with the \code{ggtext::geom_richtext}
+function to format text in \code{ggplot2} objects.
 }
 \examples{
 formatNum(1.23456, decimals = 3)
@@ -52,6 +69,31 @@ formatNum(123456, abbr = TRUE)
 formatNum(1234567890, abbr = TRUE, signif = 2)
 formatNum(1234567890, decimals = 0, abbr = TRUE)
 formatNum(c(-3:3), sign = TRUE)
+formatHTML("Text test", color = "#000000")
+formatHTML(c(123, 456), color = "orange", size = 120, bold = TRUE)
+
+# If you want to use it with \code{ggtext}:
+\dontrun{
+col1 <- "grey"
+col2 <- "orange"
+pt <- data.frame(
+  label = paste0(
+    formatHTML(123, color = col2, size = 120, bold = TRUE), "<br/>",
+    formatHTML("of children had a", col1), "<br/>",
+    formatHTML("traditional stay-at-home mom", color = col2, bold = TRUE), "<br/>",
+    formatHTML(paste0("in 2012, compared to ", 321, " in 1970"), color = col1)
+  )
+)
+ggplot(pt, aes(x = 0, y = 0)) +
+  ggtext::geom_richtext(
+    aes(label = label),
+    hjust = 0,
+    label.color = NA,
+    lineheight = 1.5
+  ) +
+  xlim(0, 0.01) +
+  theme_void()
+}
 }
 \seealso{
 Other Data Wrangling: 
@@ -64,11 +106,9 @@ Other Data Wrangling:
 \code{\link{impute}()},
 \code{\link{left}()},
 \code{\link{normalize}()},
-\code{\link{numericalonly}()},
 \code{\link{ohe_commas}()},
 \code{\link{ohse}()},
 \code{\link{removenacols}()},
-\code{\link{removenarows}()},
 \code{\link{replaceall}()},
 \code{\link{textFeats}()},
 \code{\link{textTokenizer}()},

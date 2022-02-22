@@ -62,7 +62,6 @@ Other Investment:
 \code{\link{splot_roi}()},
 \code{\link{splot_summary}()},
 \code{\link{splot_types}()},
-\code{\link{stocks_hist}()},
 \code{\link{stocks_obj}()},
 \code{\link{stocks_quote}()},
 \code{\link{stocks_report}()}
@@ -72,7 +71,7 @@ Other Credentials:
 \code{\link{db_upload}()},
 \code{\link{get_credentials}()},
 \code{\link{get_tweets}()},
-\code{\link{mailSend}()},
+\code{\link{mail_send}()},
 \code{\link{queryDB}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()},

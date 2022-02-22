@@ -49,7 +49,7 @@ Other Credentials:
 \code{\link{db_upload}()},
 \code{\link{get_credentials}()},
 \code{\link{get_tweets}()},
-\code{\link{mailSend}()},
+\code{\link{mail_send}()},
 \code{\link{queryDB}()},
 \code{\link{slackSend}()},
 \code{\link{stocks_file}()},
@@ -57,10 +57,8 @@ Other Credentials:
 
 Other Google: 
 \code{\link{filesGD}()},
-\code{\link{readGS}()},
-\code{\link{trendsRelated}()},
-\code{\link{trendsTime}()},
-\code{\link{writeGS}()}
+\code{\link{gtrends_related}()},
+\code{\link{readGS}()}
 
 Other API: 
 \code{\link{bring_api}()},
