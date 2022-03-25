@@ -142,9 +142,9 @@ stocks_quote <- function(symbols) {
 
 ####################################################################
 #' Download Stocks Historical Data
-#' 
+#'
 #' This function lets the user download stocks historical data.
-#' 
+#'
 #' @inheritParams stocks_file
 #' @param from,to Date. Dates for range. If not set, 1 year will be downloaded.
 #' Do use more than 4 days or will be over-written.
@@ -155,7 +155,8 @@ stocks_quote <- function(symbols) {
 #' case, taxes changed from A to B in given date (hard-coded)
 #' @param ... Additional parameters
 #' @examples
-#' \donttest{
+#' \dontrun{
+#' # CRAN
 #' df <- stocks_hist(symbols = c("VTI", "FB", "FIW"), from = Sys.Date() - 180)
 #' print(head(df))
 #' plot(df)
