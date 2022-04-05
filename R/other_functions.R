@@ -1,3 +1,12 @@
+#' Pipe operator
+#' @name lares-exports
+NULL
+
+#' @name %>%
+#' @export
+#' @rdname lares-exports
+NULL
+
 ####################################################################
 #' Check if Specific Package is Installed
 #'
@@ -17,7 +26,7 @@
 try_require <- function(package, stop = TRUE) {
   present <- length(find.package(package, quiet = TRUE)) > 0
   if (present) {
-    suppressMessages(library(package, character.only = TRUE))
+    suppressPackageStartupMessages(library(package, character.only = TRUE))
   } else {
     if (stop) {
       stop(paste0("Package '", package, "' required. Install and try again."), call. = FALSE)
@@ -1047,8 +1056,7 @@ read.file <- function(filename, current_wd = TRUE, sheet = 1, quiet = FALSE) {
     filetype <- gsub("\\.", "", right(filename, 4))
 
     if (filetype == "csv") {
-      try_require("data.table")
-      results <- data.frame(fread(filename))
+      results <- data.frame(read.csv(filename))
     }
     if (filetype == "xlsx") {
       try_require("openxlsx")
