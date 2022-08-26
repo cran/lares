@@ -16,6 +16,8 @@ NULL
 #' @param package Character. Name of the library
 #' @param stop Boolean. Stop if not installed. If \code{FALSE} and
 #' library is not available, warning will be shown.
+#' @param load Boolean. Load library?
+#' @param ... Enabled lazyeval to ignore shared parameters.
 #' @return No return value, called for side effects.
 #' @examples
 #' # Check if library base is installed. If not, stop and show error
@@ -23,9 +25,9 @@ NULL
 #' # Check if library xxx is installed. If not, show warning
 #' try_require("xxx", stop = FALSE)
 #' @export
-try_require <- function(package, stop = TRUE) {
+try_require <- function(package, stop = TRUE, load = TRUE, ...) {
   present <- length(find.package(package, quiet = TRUE)) > 0
-  if (present) {
+  if (present & load) {
     suppressPackageStartupMessages(library(package, character.only = TRUE))
   } else {
     if (stop) {
@@ -971,7 +973,7 @@ importxlsx <- function(file) {
 
 
 ####################################################################
-#' Quiet prints and verbose noice
+#' Quiet prints and verbose noise
 #'
 #' This function silences (verbose) output prints. Thanks to Hadley Wickham
 #' for bringing the idea.
@@ -1738,4 +1740,69 @@ formatColoured <- function(txt, colour = c("yellow", "blue", "grey"), bold = FAL
   if (colour == opts[8]) code <- 37
   out <- paste0("\033[", ifelse(!bold, 0, 1), ";", code, "m", txt, "\033[0m")
   if (cat) cat(out) else return(out)
+}
+
+####################################################################
+#' Test the Truth of R Expressions and Warn
+#'
+#' If the expression in ... is not \code{TRUE}, \code{warning} is called,
+#' producing a warning message indicating the expression which was not true.
+#'
+#' @param ... any R expression, which should evaluate to TRUE
+#' @examples
+#' warnifnot(TRUE)
+#' warnifnot(FALSE)
+#' warnifnot(1 + 1 == 3)
+#' @export
+warnifnot <- function(...) if (!isTRUE(...)) warning(paste(deparse(...), "is not TRUE"))
+
+
+####################################################################
+#' Print lares R library Logo
+#'
+#' Used "ASCII Art Generator" from manytools.org to convert logo to ASCII.
+#' \href{https://manytools.org/hacker-tools/convert-images-to-ascii-art/}{Visit}.
+#'
+#' @param version Boolean. Include R and lares version?
+#' @examples
+#' lares_logo()
+#' @export
+lares_logo <- function(version = TRUE) {
+  cat(paste("
+                            (((((
+                 *     /(((((((((((((*     (
+                   (((/              /((((
+        /     .(                           (((
+    .     ((                                  *(((/     (
+      (((                                        ((((((
+   ,(((((((((                                     (((((((
+   ,((((((((((((       (((((/**((((((              *(((((
+   ,(((((((((((((((((,                ((            (((((
+   ,((((((((((((((((    ,((((((((       ((          *((((
+   ,###################            #*     #/        ,####
+   *################.               .#     #        #####
+   *##############                   (######        #####
+   *###########,   .#####,            ##           ######
+   *#########    ###########          ##          #######
+   *#######    ###  ,#####           ###         ########
+   *#############                    ##.        #########
+   *###########                      ##        ##########
+    ##########                       ##       ######*,###
+  ,     ####               ####      ###     ####  #(     /
+      (     .#         /%%%%%%%%%%%%%%%%#    %%%      @
+                 %%%%%%%%%%%%%%%%%%%%%%%%%
+               /     #%%%%%%%%%%%%%%%%%*     /
+                          %%%%%%%%%
+                              %
+                            /   %
+"))
+  if (version) {
+    temp <- packageDescription("lares")
+    ver <- paste(ifelse(is.null(temp$Repository), "dev", "stable"),
+      temp$Version,
+      sep = "-"
+    )
+    cat(paste("\nlares:", ver, "\n"))
+    cat(R.version$version.string)
+  }
 }
