@@ -1,4 +1,4 @@
-ce1bdabbbecc6e08918db636273be03c *DESCRIPTION
+aa8c3e1c2872160475c295d35828c7ce *DESCRIPTION
 4cc6aea5046cb3b738dff9d8b494920e *NAMESPACE
 c4628fc797b8cda935a4cd2de81eab3f *R/apis.R
 b762a2aa0e6d4946653944fec6819a05 *R/audio.R
@@ -41,7 +41,7 @@ ed873cf84b48b5fd33bf5ed507a43c7e *R/model_preprocessing.R
 bae3af8122b94d9275c54bf7d825f829 *R/numble.R
 c8095265706b559511c2371a5c63db76 *R/object_detection.R
 1f9289ffa9f47723bf329bec783e0e39 *R/onehotencoding.R
-73720b4950c97a6eed3788880b3ed59d *R/other_functions.R
+741fcd7f26db3ac9216567048f555710 *R/other_functions.R
 d15d6790aaa3cfa78baa21d9b18d169b *R/other_plots.R
 0392256e58f6f95301103ebbbd23581d *R/outliers.R
 f6a4d1c79b009755ae626f3d8987c6ee *R/plot_scales.R
@@ -62,7 +62,7 @@ a805b7a9ed681a0f9a9924c116f8f391 *R/theme_lares.R
 29fcde29ba973e3dad02a251abc99205 *R/twitter.R
 eb21e8eeafda80e51a1688b6e401482d *R/typeform.R
 4661f3b2fc475ba7583fb116806b06b2 *R/update.R
-b4f96fa58687cc211287b8de992942f5 *R/wordle.R
+128d872b6c927f2dd4fe125610727430 *R/wordle.R
 3abbce296a9d6de33de1ae473d45d9df *R/x2y.R
 cf87e21ba728b85da43f8c02b3dcd1f0 *R/zzz.R
 78881f89cc5d0b839b6b8ecf04da9f85 *README.md
@@ -72,7 +72,7 @@ fb2872200e7b3ec445f724aaf4d0767c *data/dft.RData
 0ba7d78527c025db03d03e935718d8e1 *inst/_pkgdown.yml
 05dc8d1eb780dd4f5a31f4517d2a6260 *inst/doc/h2o_automl.R
 2538245d917599388809eb3fa4171808 *inst/doc/h2o_automl.Rmd
-e08f1669c7c95a3baa6ef533d2f37b77 *inst/doc/h2o_automl.html
+5c72ec0885ef283859c84d111393ce78 *inst/doc/h2o_automl.html
 8cf91783cd4a4e7fe2c25d80d127028d *inst/docs/config.yml
 dea76c9731552aa757a8f0383dba17e4 *inst/docs/dummyPortfolio.xlsx
 b71227f813987aef5c7a80644618862c *inst/docs/stocksReport.Rmd
@@ -255,12 +255,12 @@ b261da7d235b107b63890703ef48239a *man/theme_lares.Rd
 36a0d7603f891c8350ef8c5a29ef9c43 *man/topics_rake.Rd
 178399d6ce28a8046901b1c2fd1d0fed *man/tree_var.Rd
 40d5270c068082a71444cd8963e60dbc *man/trim_mp3.Rd
-e4074e615c089897c38cabbd8f48dd27 *man/try_require.Rd
+08ab72261f500310f454357d4f643a97 *man/try_require.Rd
 b271b5b024ea992f5737561a71617631 *man/updateLares.Rd
 ee782bb6f30620eebd214ae739761063 *man/vector2text.Rd
 4a95c2fe55a04e69c6f60552fe499dbd *man/warnifnot.Rd
 7624428b1411e75680b5607fb451b6d7 *man/winsorize.Rd
-3b3ace3d54d0757d8c73b72d870a2a4b *man/wordle.Rd
+c63038b829254b9fd8ede41a0de7c05a *man/wordle.Rd
 0a635e50961277914cbdcbc7e1f1deb7 *man/x2y.Rd
 14593cd8c0152ac19a61e8b647e938c8 *man/year_month.Rd
 f98ea6d0f62d3d8284fece9d94b4a750 *man/zerovar.Rd
