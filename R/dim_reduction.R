@@ -45,7 +45,6 @@ reduce_pca <- function(df, n = NULL, ignore = NULL,
   if (!is.null(n)) PCA$pcadf <- PCA$pcadf[, 1:n]
 
   if (plot) {
-
     # How much variance is explained by n PCA features?
     pca_explained <- PCA$pca_explained
     PCA$plot_explained <- data.frame(id = seq_along(pca_explained)) %>%
@@ -135,7 +134,7 @@ reduce_tsne <- function(df, n = 2, ignore = NULL,
 
   tSNE$tsne$Y <- tSNE$tsne$costs <- tSNE$tsne$N <- NULL
 
-  if (plot & n >= 2) {
+  if (plot && n >= 2) {
     tSNE$tsne$plot <- tSNE$tsne$df %>%
       ggplot(aes(x = .data$X1, y = .data$X2)) +
       geom_point() +

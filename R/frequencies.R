@@ -640,7 +640,7 @@ freqs_list <- function(df,
     }
     duos <- rownames(duos)
     message(paste(">>> Binary columns detected:", v2t(duos)))
-    which <- unlist(sapply(df[, duos], function(x) x == 1))
+    which <- unlist(lapply(df[, duos], function(x) x == 1))
     result <- NULL
     for (i in seq_len(nrow(df[, duos]))) {
       result <- c(result, v2t(colnames(df[, duos])[which[i, ]], quotes = FALSE))
@@ -761,10 +761,11 @@ freqs_list <- function(df,
     formatNum(sum(elements$n), 0)
   )
   if (min_elements > 1) {
-    caption <- v2t(c(caption, sprintf(
-      "Excluding combinations with less than %s elements", min_elements
-    )),
-    quotes = FALSE, sep = "\n"
+    caption <- v2t(
+      c(caption, sprintf(
+        "Excluding combinations with less than %s elements", min_elements
+      )),
+      quotes = FALSE, sep = "\n"
     )
   }
   if (!tail) caption <- paste(caption, "Tail combinations suppressed from plot", sep = "\n")

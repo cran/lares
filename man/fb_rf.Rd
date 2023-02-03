@@ -16,7 +16,7 @@ fb_rf(
   frequency_cap = 8,
   prediction_mode = 1,
   curve = TRUE,
-  api_version = "v13.0",
+  api_version = NULL,
   process = TRUE,
   ...
 )
@@ -51,7 +51,7 @@ rest of arguments of this function will be ignored.}
 
 \item{curve}{Boolean. Return curve data? If not, only prediction will be created.}
 
-\item{api_version}{Character. Facebook API version}
+\item{api_version}{Character. Facebook API version.}
 
 \item{process}{Boolean. Process GET results to a more friendly format?}
 
@@ -130,24 +130,22 @@ Other API:
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
 \code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

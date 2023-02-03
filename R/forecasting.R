@@ -48,7 +48,6 @@ forecast_arima <- function(time, values, n_future = 30,
                            AR = NA, MA = NA,
                            wd_excluded = NA,
                            plot = TRUE, plot_days = 90, project = NA) {
-
   try_require("forecast")
 
   # ARIMA doesn't use zeroes!
@@ -71,7 +70,7 @@ forecast_arima <- function(time, values, n_future = 30,
   }
 
   # Which AR and MA values minimize our AIC
-  if (is.na(AR) & is.na(MA)) {
+  if (is.na(AR) && is.na(MA)) {
     arma <- c(ARMA_min:ARMA)
     aic <- expand.grid(AR = arma, MA = arma, cals = 0)
     message("Iterating for best AR / MA combinations; there are ", nrow(aic), "!")
@@ -205,7 +204,7 @@ prophesize <- function(df, n_future = 60, country = NULL,
   if (logged) df$y <- log(df$y)
 
   # Outliers
-  df <- df[!rank(-df$y) %in% c(1:round(nrow(df) * pout)), ]
+  df <- df[!rank(-df$y) %in% 1:round(nrow(df) * pout), ]
 
   # Run prophet functions
   m <- prophet(

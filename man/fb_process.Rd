@@ -2,22 +2,30 @@
 % Please edit documentation in R/facebook.R
 \name{fb_process}
 \alias{fb_process}
-\title{Process Facebook's API Objects}
+\title{Paginate and Process Facebook's API Results}
 \usage{
-fb_process(response, paginate = TRUE)
+fb_process(input, paginate = TRUE, sleep = 0, quiet = FALSE, ...)
 }
 \arguments{
-\item{response}{GET's output object, class response}
+\item{input}{GET's output object (response) or link (character).}
 
-\item{paginate}{Boolean. Run through all paginations? If not,
-only the first one will be processed.}
+\item{paginate}{Boolean or integer. Run through all paginations? If set
+to \code{FALSE}, only the first one will be processed. If set to any other
+integer value, will process the first N paginations.}
+
+\item{sleep}{Numeric value. How much should each loop wait until until running
+the next pagination query?}
+
+\item{quiet}{Boolean. Quiet messages?}
+
+\item{...}{Additional parameters.}
 }
 \value{
 data.frame with un-nested processed results or NULL if no results found.
 }
 \description{
 Process and paginate raw results from Facebook's API, result of
-querying the API with \code{httr::GET}.
+querying the API with \code{httr::GET} or by passing an API link.
 }
 \seealso{
 Other API: 
@@ -26,8 +34,7 @@ Other API:
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
@@ -35,15 +42,14 @@ Other API:
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

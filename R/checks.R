@@ -75,8 +75,10 @@ check_attr <- function(object, attr = "type", check = NULL, stop = TRUE) {
   if (is.null(attr)) {
     attrs <- attributes(object)
     if (length(attrs) > 0) {
-      stop("Your attr input should be any of: ",
-           formatColoured(v2t(attrs), colour = "green", cat = FALSE))
+      stop(
+        "Your attr input should be any of: ",
+        formatColoured(v2t(attrs), colour = "green", cat = FALSE)
+      )
     } else {
       stop("Your objct has no attributes to be checked")
     }
@@ -132,7 +134,7 @@ is_ip <- function(x, ...) {
 #' @return \code{are_id}. Boolean. Result of checking if \code{x} is a potential ID vector
 #' @export
 are_id <- function(x) {
-  return(is.character(x) & length(unique(x)) == length(x))
+  return(is.character(x) && length(unique(x)) == length(x))
 }
 
 #' @rdname is_url

@@ -7,7 +7,14 @@
 \usage{
 tic(id = 1, start = proc.time()["elapsed"], quiet = TRUE)
 
-toc(id = 1, msg = "Elapsed time:", type = "units", signif = 3, quiet = FALSE)
+toc(
+  id = 1,
+  msg = "Elapsed time:",
+  type = "units",
+  signif = 3,
+  quiet = FALSE,
+  ...
+)
 }
 \arguments{
 \item{id}{Define ID if multiple \code{tic} & \code{toc} are being used.}
@@ -21,7 +28,9 @@ toc(id = 1, msg = "Elapsed time:", type = "units", signif = 3, quiet = FALSE)
 \item{type}{Character. Output format for \code{time} list element.
 Choose any of: \code{units, clock, seconds}.}
 
-\item{signif}{Integer. Significant digits}
+\item{signif}{Integer. Significant digits.}
+
+\item{...}{Additional parameters.}
 }
 \value{
 Invisible list. Contains tic (start time), toc (stop time),
@@ -58,19 +67,23 @@ Other Tools:
 \code{\link{db_upload}()},
 \code{\link{export_plot}()},
 \code{\link{export_results}()},
+\code{\link{files_functions}()},
+\code{\link{font_exists}()},
+\code{\link{formatColoured}()},
+\code{\link{formatHTML}()},
 \code{\link{get_credentials}()},
-\code{\link{h2o_predict_API}()},
-\code{\link{h2o_predict_MOJO}()},
-\code{\link{h2o_predict_binary}()},
-\code{\link{h2o_predict_model}()},
+\code{\link{glued}()},
+\code{\link{grepm}()},
 \code{\link{h2o_selectmodel}()},
 \code{\link{haveInternet}()},
 \code{\link{image_metadata}()},
 \code{\link{importxlsx}()},
 \code{\link{ip_data}()},
 \code{\link{json2vector}()},
+\code{\link{list_cats}()},
 \code{\link{listfiles}()},
 \code{\link{mail_send}()},
+\code{\link{move_files}()},
 \code{\link{msplit}()},
 \code{\link{myip}()},
 \code{\link{quiet}()},
@@ -78,7 +91,8 @@ Other Tools:
 \code{\link{statusbar}()},
 \code{\link{try_require}()},
 \code{\link{updateLares}()},
-\code{\link{zerovar}()}
+\code{\link{warnifnot}()},
+\code{\link{what_size}()}
 }
 \concept{Time}
 \concept{Tools}

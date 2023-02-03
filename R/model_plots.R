@@ -49,12 +49,13 @@ mplot_density <- function(tag,
     }
 
     p1 <- ggplot(out) +
-      geom_density(aes(
-        x = as.numeric(.data$score),
-        group = .data$tag,
-        fill = as.character(.data$tag)
-      ),
-      alpha = 0.6, adjust = 0.25, size = 0
+      geom_density(
+        aes(
+          x = as.numeric(.data$score),
+          group = .data$tag,
+          fill = as.character(.data$tag)
+        ),
+        alpha = 0.6, adjust = 0.25, size = 0
       ) +
       labs(
         title = "Classification Model Results",
@@ -376,11 +377,12 @@ mplot_cuts <- function(score,
     geom_col(fill = "deepskyblue", colour = "transparent") +
     xlab("Cumulative volume") +
     ylab("Score") +
-    geom_text(aes(
-      label = round(100 * .data$cuts, 1),
-      vjust = ifelse(.data$cuts * 100 < 50, -0.3, 1.3)
-    ),
-    size = 3, colour = "black", inherit.aes = TRUE, check_overlap = TRUE
+    geom_text(
+      aes(
+        label = round(100 * .data$cuts, 1),
+        vjust = ifelse(.data$cuts * 100 < 50, -0.3, 1.3)
+      ),
+      size = 3, colour = "black", inherit.aes = TRUE, check_overlap = TRUE
     ) +
     guides(colour = "none") +
     labs(title = sprintf("Score cuts (%s quantiles)", splits)) +
@@ -672,17 +674,19 @@ mplot_metrics <- function(results,
       colour = "Dataset", x = "# of trees", y = "LogLoss"
     ) +
     scale_colour_brewer(palette = "Set1") +
-    geom_text(aes(
-      x = .data$trees, y = .data$train_ll, colour = "Train",
-      label = round(.data$train_ll, 2)
-    ),
-    check_overlap = TRUE, nudge_y = 0.03, size = 3
+    geom_text(
+      aes(
+        x = .data$trees, y = .data$train_ll, colour = "Train",
+        label = round(.data$train_ll, 2)
+      ),
+      check_overlap = TRUE, nudge_y = 0.03, size = 3
     ) +
-    geom_text(aes(
-      x = .data$trees, y = .data$test_ll, colour = "Test",
-      label = round(.data$test_ll, 2)
-    ),
-    check_overlap = TRUE, nudge_y = 0.03, size = 3
+    geom_text(
+      aes(
+        x = .data$trees, y = .data$test_ll, colour = "Test",
+        label = round(.data$test_ll, 2)
+      ),
+      check_overlap = TRUE, nudge_y = 0.03, size = 3
     ) +
     theme_lares(pal = 1) +
     theme(
@@ -700,17 +704,19 @@ mplot_metrics <- function(results,
     ) +
     scale_colour_brewer(palette = "Set1") +
     guides(colour = "none") +
-    geom_text(aes(
-      x = .data$trees, y = .data$train_auc * 100, colour = "Train",
-      label = round(.data$train_auc * 100, 2)
-    ),
-    check_overlap = TRUE, nudge_y = 3, size = 3
+    geom_text(
+      aes(
+        x = .data$trees, y = .data$train_auc * 100, colour = "Train",
+        label = round(.data$train_auc * 100, 2)
+      ),
+      check_overlap = TRUE, nudge_y = 3, size = 3
     ) +
-    geom_text(aes(
-      x = .data$trees, y = .data$test_auc * 100, colour = "Test",
-      label = round(.data$test_auc * 100, 2)
-    ),
-    check_overlap = TRUE, nudge_y = 3, size = 3
+    geom_text(
+      aes(
+        x = .data$trees, y = .data$test_auc * 100, colour = "Test",
+        label = round(.data$test_auc * 100, 2)
+      ),
+      check_overlap = TRUE, nudge_y = 3, size = 3
     ) +
     theme_lares(pal = 1)
 
@@ -875,7 +881,7 @@ mplot_full <- function(tag,
 
 
   # Categorical Binomial Models
-  if (length(unique(tag)) == 2 & is.numeric(score)) {
+  if (length(unique(tag)) == 2 && is.numeric(score)) {
     p1 <- mplot_density(tag = tag, score = score, subtitle = subtitle, model_name = model_name)
     p2 <- mplot_splits(tag = tag, score = score, splits = splits) +
       theme(plot.margin = margin(10, 8, 5, 0))
@@ -893,7 +899,7 @@ mplot_full <- function(tag,
   }
 
   # Multi-Categorical Models
-  if (length(unique(tag)) > 2 & length(unique(tag)) <= thresh) {
+  if (length(unique(tag)) > 2 && length(unique(tag)) <= thresh) {
     m <- model_metrics(tag, score, multis, thresh = thresh)
     p1 <- m$plots$conf_matrix +
       labs(
@@ -905,7 +911,7 @@ mplot_full <- function(tag,
   }
 
   # Regression Continuous Models
-  if (is.numeric(tag) & is.numeric(score) & length(unique(tag)) > thresh) {
+  if (is.numeric(tag) && is.numeric(score) && length(unique(tag)) > thresh) {
     p1 <- mplot_lineal(tag = tag, score = score, subtitle = subtitle, model_name = model_name) +
       theme_lares(plot_colour = "white")
     p2 <- mplot_density(tag = tag, score = score)
@@ -982,7 +988,7 @@ mplot_conf <- function(tag, score, thresh = 0.5, abc = TRUE,
   if (!diagonal) df <- filter(df, .data$tag != .data$score)
 
   # About scores
-  if (is.numeric(df$score) & length(unique(tag)) == 2) {
+  if (is.numeric(df$score) && length(unique(tag)) == 2) {
     means <- df %>%
       group_by(.data$tag) %>%
       summarise(mean = mean(.data$score))
@@ -1151,7 +1157,7 @@ mplot_gain <- function(tag, score, multis = NA, target = "auto",
         slice(1) %>%
         .$percentile
     }
-    if (highlight %in% gains$percentile & highlight != "none") {
+    if (highlight %in% gains$percentile && highlight != "none") {
       highlight <- as.integer(highlight)
       note <- paste0(
         "If we select the top ",
@@ -1296,7 +1302,7 @@ mplot_response <- function(tag, score, multis = NA, target = "auto",
         slice(1) %>%
         .$percentile
     }
-    if (highlight %in% gains$percentile & highlight != "none") {
+    if (highlight %in% gains$percentile && highlight != "none") {
       highlight <- as.integer(highlight)
       note <- paste0(
         "If we select the top ",

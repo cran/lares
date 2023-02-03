@@ -36,15 +36,16 @@ stocks_file <- function(file = NA,
                         cache = TRUE,
                         quiet = FALSE) {
   cache_file <- c(as.character(Sys.Date()), "stocks_file")
-  if (cache_exists(cache_file) & cache) {
+  if (cache_exists(cache_file) && cache) {
     results <- cache_read(cache_file, quiet = quiet)
     return(results)
   }
 
   processFile <- function(file, keep_old = TRUE) {
-    port <- read.xlsx(file, sheet = sheets[1], skipEmptyRows = TRUE, detectDates = TRUE)
-    cash <- read.xlsx(file, sheet = sheets[2], skipEmptyRows = TRUE, detectDates = TRUE)
-    trans <- read.xlsx(file, sheet = sheets[3], skipEmptyRows = TRUE, detectDates = TRUE)
+    port <- as_tibble(read.xlsx(file, sheet = sheets[1], skipEmptyRows = TRUE, detectDates = TRUE))
+    cash <- as_tibble(read.xlsx(file, sheet = sheets[2], skipEmptyRows = TRUE, detectDates = TRUE))
+    trans <- as_tibble(read.xlsx(file, sheet = sheets[3], skipEmptyRows = TRUE, detectDates = TRUE))
+    trans$Date <- as.Date(trans$Date, origin = "1970-01-01")
     if ("Value" %in% colnames(trans)) {
       trans <- rename(trans, Each = .data$Value, Invested = .data$Amount)
     }
@@ -55,14 +56,14 @@ stocks_file <- function(file = NA,
 
   # FOR PERSONAL USE
   local <- Sys.info()
-  if (auto & Sys.getenv("LARES_PORTFOLIO") != "") {
+  if (auto && Sys.getenv("LARES_PORTFOLIO") != "") {
     if (!quiet) message("Using BL's local file...")
     local <- Sys.getenv("LARES_PORTFOLIO")
     results <- processFile(local, keep_old)
   } else {
     # FOR EVERYONE'S USE
     if (!is.na(file)) {
-      if (file.exists(file) | is_url(file)) {
+      if (file.exists(file) || is_url(file)) {
         results <- processFile(file, keep_old)
       } else {
         stop("Error: that file doesn't exist or it's not in your working directory!")
@@ -176,7 +177,7 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
     as.character(Sys.Date()), "stocks_hist",
     symbols, sum(as.integer(as.Date(from)), as.integer(as.Date(to)))
   )
-  if (cache_exists(cache_file) & cache) {
+  if (cache_exists(cache_file) && cache) {
     results <- cache_read(cache_file, quiet = quiet)
     return(results)
   }
@@ -205,7 +206,7 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
       #   values <- head(values, 1)
 
       # Add right now's data
-      if (today & to == Sys.Date()) {
+      if (today && to == Sys.Date()) {
         now <- stocks_quote(symbol)
         # Append to historical data / replace most recent
         if (length(now) > 0) {
@@ -249,7 +250,7 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
         divs <- rbind(divs, div)
       }
 
-      if (!quiet & length(symbols) > 1) {
+      if (!quiet && length(symbols) > 1) {
         info <- paste(symbol, "since", start_date, "   ")
         statusbar(i, length(symbols), info)
       }
@@ -538,17 +539,19 @@ splot_summary <- function(p, s, save = FALSE) {
     geom_col(aes(y = .data$box), fill = "grey", alpha = 0.5) +
     geom_point(aes(y = .data$CumInvested + .data$DifUSD, shape = .data$shapeflag), colour = "black") +
     scale_shape_identity() +
-    geom_text(aes(
-      label = paste0("$", formatNum(.data$DifUSD, 0)),
-      y = .data$CumInvested + .data$DifUSD
-    ),
-    size = 3, hjust = -.2, vjust = -0.2
+    geom_text(
+      aes(
+        label = paste0("$", formatNum(.data$DifUSD, 0)),
+        y = .data$CumInvested + .data$DifUSD
+      ),
+      size = 3, hjust = -.2, vjust = -0.2
     ) +
-    geom_text(aes(
-      label = paste0(round(.data$DifPer, 1), "%"),
-      y = .data$CumInvested + .data$DifUSD
-    ),
-    size = 2.9, hjust = -.2, vjust = 1.2
+    geom_text(
+      aes(
+        label = paste0(round(.data$DifPer, 1), "%"),
+        y = .data$CumInvested + .data$DifUSD
+      ),
+      size = 2.9, hjust = -.2, vjust = 1.2
     ) +
     geom_text(aes(label = paste0("$", formatNum(.data$CumValue, 0)), y = .data$box),
       size = 3, hjust = -.1, vjust = -0.2
@@ -557,17 +560,19 @@ splot_summary <- function(p, s, save = FALSE) {
       label = paste0(.data$CumQuant, " @$", formatNum(.data$CumValue / .data$CumQuant, 1)),
       y = .data$box
     ), size = 2, hjust = -.1, vjust = 1.5) +
-    geom_text(aes(
-      label = paste0("$", formatNum(.data$CumInvested, 1)),
-      y = 0, colour = .data$Symbol
-    ),
-    size = 2, hjust = 0, vjust = -0.2
+    geom_text(
+      aes(
+        label = paste0("$", formatNum(.data$CumInvested, 1)),
+        y = 0, colour = .data$Symbol
+      ),
+      size = 2, hjust = 0, vjust = -0.2
     ) +
-    geom_text(aes(
-      label = paste0("@$", formatNum(.data$CumInvested / .data$CumQuant, 1)),
-      y = 0, x = .data$Symbol, colour = .data$Symbol
-    ),
-    size = 2, hjust = 0, vjust = 1.5
+    geom_text(
+      aes(
+        label = paste0("@$", formatNum(.data$CumInvested / .data$CumQuant, 1)),
+        y = 0, x = .data$Symbol, colour = .data$Symbol
+      ),
+      size = 2, hjust = 0, vjust = 1.5
     ) +
     annotate("label",
       x = length(unique(today$CumQuant)) * 0.25, y = tops * 0.6,
@@ -1003,7 +1008,7 @@ etf_sector <- function(etf = "VTI", quiet = FALSE, cache = TRUE) {
   }
 
   cache_file <- c(as.character(Sys.Date()), "etf_sector", etf)
-  if (cache_exists(cache_file) & cache) {
+  if (cache_exists(cache_file) && cache) {
     results <- cache_read(cache_file, quiet = quiet)
     return(results)
   }
@@ -1037,7 +1042,7 @@ etf_sector <- function(etf = "VTI", quiet = FALSE, cache = TRUE) {
     } else {
       nodata <- c(nodata, info)
     }
-    if (!quiet & length(etf) > 1) {
+    if (!quiet && length(etf) > 1) {
       statusbar(i, length(etf), info)
     }
   }
@@ -1076,7 +1081,7 @@ splot_etf <- function(s, keep_all = FALSE, cache = TRUE, save = FALSE) {
   if (!"Date" %in% colnames(s)) s$Date <- Sys.Date()
 
   cache_file <- c(as.character(Sys.Date()), "splot_etf", s)
-  if (cache_exists(cache_file) & cache) {
+  if (cache_exists(cache_file) && cache) {
     etfs <- cache_read(cache_file, quiet = quiet)
   } else {
     etfs <- etf_sector(s)
@@ -1084,10 +1089,11 @@ splot_etf <- function(s, keep_all = FALSE, cache = TRUE, save = FALSE) {
 
   if (length(etfs) > 0) {
     df <- etfs %>%
-      right_join(select(s, .data$Symbol, .data$CumValue, .data$Date) %>%
-        filter(.data$Date == max(.data$Date)) %>%
-        mutate(Symbol = as.character(.data$Symbol)),
-      by = c("ETF" = "Symbol")
+      right_join(
+        select(s, .data$Symbol, .data$CumValue, .data$Date) %>%
+          filter(.data$Date == max(.data$Date)) %>%
+          mutate(Symbol = as.character(.data$Symbol)),
+        by = c("ETF" = "Symbol")
       ) %>%
       {
         if (keep_all == FALSE) filter(., !is.na(.data$Sector)) else .
@@ -1193,7 +1199,6 @@ stocks_obj <- function(data = stocks_file(),
   # Relative plots (using time windows)
   message(glued(">>> Running calculations and plots for {ws} time window{ifelse(ws>1,'s','')}..."))
   plots_relative <- lapply(window, function(x) {
-
     # Filter the data given the window
     s <- daily_stocks(hist, trans, tickers, window = x)
     p <- daily_portfolio(hist, trans, cash, cash_fix = cash_fix, window = x)
@@ -1347,7 +1352,7 @@ stocks_report <- function(data = NA,
       creds = creds,
       quiet = FALSE
     )
-    if (!keep & attachment) invisible(file.remove(html_file))
+    if (!keep && attachment) invisible(file.remove(html_file))
   }
 
   toc("stocks_report")
@@ -1376,13 +1381,13 @@ stocks_report <- function(data = NA,
       if (window == "5Y") filter(., .data$Date >= Sys.Date() %m-% years(5)) else .
     }
 
-  if ("ROI" %in% colnames(df) & window == "MAX") { # Dataframe: portfolio
+  if ("ROI" %in% colnames(df) && window == "MAX") { # Dataframe: portfolio
     # Add a last row (first date) with no data
     new_df <- rbind(new_df, df %>% arrange(.data$Date) %>% slice(1) %>% ungroup() %>% mutate_if(
       is.numeric, function(x) 0
     ) %>% mutate(Date = .data$Date - 1))
   }
-  if (!"ROI" %in% colnames(df) & window == "MAX") { # Dataframe: stocks
+  if (!"ROI" %in% colnames(df) && window == "MAX") { # Dataframe: stocks
     new_df <- rbind(new_df, df %>% arrange(.data$Date) %>%
       group_by(.data$Symbol) %>% slice(1) %>% ungroup() %>% mutate_if(
         is.numeric, function(x) 0

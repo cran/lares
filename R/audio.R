@@ -33,14 +33,13 @@
 #' @export
 get_mp3 <- function(id,
                     mp3 = TRUE,
-                    params = "",
+                    params = "--no-check-certificate",
                     start_time = 0,
                     end_time = NA,
                     overwrite = TRUE,
                     info = TRUE,
                     cover = FALSE,
                     quiet = FALSE) {
-
   # Build query's parameters
   query <- "--rm-cache-dir"
   if (mp3) {
@@ -87,7 +86,7 @@ get_mp3 <- function(id,
   invisible(file.remove(f))
   infox[["formats"]] <- NULL
 
-  if (cover & mp3 & info) {
+  if (cover && mp3 && info) {
     aux <- gsub("\\.mp3", "", infox$title)
     aux <- gsub("lyrics|lyric|official|video", "", tolower(aux))
     aux <- gsub(" ", "\\+", cleanText(aux))

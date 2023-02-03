@@ -62,19 +62,18 @@ corr <- function(df, method = "pearson",
                  limit = 10,
                  top = NA,
                  ...) {
-  
   # Ignored columns
   if (isTRUE(is.na(ignore)[1])) ignore <- NULL
   df <- select(df, -any_of(ignore))
-  
+
   # One hot encoding for categorical features
   if (dummy) {
     df <- ohse(df, quiet = TRUE, limit = limit, redundant = redundant, ...)
   }
-  
+
   # Select only numerical features and create log+1 for each one
   d <- numericalonly(df, logs = logs)
-  
+
   # Drop columns with not enough data to calculate correlations / p-values
   miss <- missingness(d, summary = FALSE)
   if (is.data.frame(miss)) {
@@ -87,17 +86,17 @@ corr <- function(df, method = "pearson",
       d <- select(d, -one_of(toDrop))
     }
   }
-  
+
   # Avoid sd = 0 warning:
   # In cor(x, y) : the standard deviation is zeroIn cor(x, y) : the standard deviation is zero
   d <- Filter(function(x) sd(x, na.rm = TRUE) != 0, d)
-  
+
   # Correlations
   rs <- suppressWarnings(cor(d, method = method, use = use))
   if (half) for (i in seq_along(rs[, 1])) rs[1:i, i] <- NA
   cor <- round(data.frame(rs), dec)
   colnames(cor) <- row.names(cor) <- colnames(d)
-  
+
   # Top N
   if (!is.na(top)) {
     message(paste("Returning the top", top, "variables only..."))
@@ -109,18 +108,20 @@ corr <- function(df, method = "pearson",
     which <- as.vector(imp$variable[1:top])
     cor <- cor[which, which]
   }
-  
+
   # Statistical significance (p-value)
   if (pvalue) {
     output <- list(cor = cor, pvalue = .cor_test_p(d, method = method, ...))
-    if (!is.null(padjust))
+    if (!is.null(padjust)) {
       output[["pvalue_adj"]] <- matrix(
         p.adjust(output$pvalue, method = padjust),
         ncol = ncol(output$cor),
-        dimnames = list(names(output$cor), names(output$cor)))
+        dimnames = list(names(output$cor), names(output$cor))
+      )
+    }
     return(output)
   }
-  
+
   return(cor)
 }
 
@@ -190,16 +191,16 @@ corr_var <- function(df, var,
   vars <- enquos(var)
   var <- as_label(vars[[1]])
   df <- select(df, -contains(paste0(var, "_log")))
-  
+
   # Calculate correlations
   rs <- corr(df, half = FALSE, ignore = ignore, limit = limit, pvalue = TRUE, ...)
   if (is.data.frame(rs)) rs <- list(cor = rs, pvalue = mutate_all(rs, ~1))
-  
+
   # Check if main variable exists
   if (!var %in% colnames(rs$cor)) {
     msg <- paste("Not a valid input:", var, "was transformed or does not exist.")
     maybes <- colnames(rs$cor)[grepl(var, colnames(rs$cor))]
-    if (length(maybes) > 0 & maybes[1] %in% colnames(rs$cor)) {
+    if (length(maybes) > 0 && maybes[1] %in% colnames(rs$cor)) {
       msg <- sprintf("%s\n  >> Automatically using '%s'", msg, maybes[1])
       var <- maybes[1]
       fixable <- TRUE
@@ -208,21 +209,22 @@ corr_var <- function(df, var,
     }
     if (fixable) warning(msg) else stop(msg)
   }
-  
+
   d <- as_tibble(data.frame(
     variables = colnames(rs$cor),
     corr = rs$cor[, c(var)],
     pvalue = rs$pvalue[, c(var)]
   ))
-  if ("pvalue_adj" %in% names(rs))
+  if ("pvalue_adj" %in% names(rs)) {
     d$pvalue_adj <- rs$pvalue_adj[, c(var)]
+  }
   d <- d[(d$corr < 1 & !is.na(d$corr)), ]
   d <- d[order(-abs(d$corr)), ]
-  
+
   original_n <- nrow(d)
-  
+
   if (!zeroes) d <- d[d$corr != 0, ]
-  
+
   # Suppress non-statistical significant correlations
   if ("pvalue_adj" %in% colnames(d)) {
     d <- d %>%
@@ -232,38 +234,38 @@ corr_var <- function(df, var,
   } else {
     d <- d %>%
       mutate(pvalue = as.numeric(ifelse(is.na(.data$pvalue), 1, .data$pvalue))) %>%
-      filter(.data$pvalue <= max_pvalue) 
+      filter(.data$pvalue <= max_pvalue)
   }
   if (nrow(d) == 0) warning("Check your 'max_pvalue' input: might be too low!")
-  
+
   # Limit automatically when more than 20 observations
-  if (is.na(top) & nrow(d) > 20) {
+  if (is.na(top) && nrow(d) > 20) {
     top <- 20
     if (!quiet) message(paste(">>> Reduced results to", top, "largest correlations. Set by 'top' parameter"))
   }
-  
+
   if (ceiling < 1) {
     d <- d[abs(d$corr) < ceiling, ]
     if (!quiet) message(paste0("Removing all correlations greater than ", 100 * ceiling, "% (absolute)"))
   }
-  
+
   d <- d[complete.cases(d), ]
-  
+
   if (!is.na(top)) d <- head(d, top)
-  
+
   # Shorten up the long names of some variables
   if (trim > 0) {
     d$variables <- substr(d$variables, 1, trim)
     if (!quiet) message(paste("Trimmed all name values into", trim, "characters"))
   }
-  
+
   # Add ranking numbers
   if (ranks) {
     d <- mutate(d, variables = sprintf("%s. %s", row_number(), .data$variables))
   }
-  
+
   class(d) <- c("corr_var", class(d))
-  
+
   if (plot) {
     p <- plot(d, var, max_pvalue = max_pvalue, top = top, limit = original_n)
     return(p)
@@ -297,12 +299,12 @@ plot.corr_var <- function(x, var, max_pvalue = 1, top = NA, limit = NULL, ...) {
       labels = function(x) sub("^(-)?0[.]", "\\1.", x)
     ) +
     theme_lares(pal = 4)
-  
+
   if (is.null(limit)) limit <- 100
-  if (!is.na(top) & top < limit) {
+  if (!is.na(top) && top < limit) {
     p <- p + labs(subtitle = paste(top, "largest correlation variables (original & dummy)"))
   }
-  
+
   if (max_pvalue < 1) {
     p <- p + labs(caption = paste("Correlations with p-value <", max_pvalue))
   }
@@ -389,7 +391,7 @@ corr_cross <- function(df, plot = TRUE,
     ret$group2 <- ifelse(ret$group2 == "fill", aux, ret$group2)
   }
   ret <- filter(ret, .data$group1 != .data$group2)
-  if (nrow(ret) > top & !is.na(top) & !quiet & type != 2) {
+  if (nrow(ret) > top && !is.na(top) && !quiet && type != 2) {
     message(sprintf("Returning only the top %s. You may override with the 'top' argument", top))
     ret <- slice(ret, 1:top)
   }
@@ -418,23 +420,21 @@ corr_cross <- function(df, plot = TRUE,
     if (type == 1) {
       p <- ret %>%
         head(top) %>%
+        ungroup() %>%
         mutate(
           label = paste(.data$key, "+", .data$mix),
           abs = abs(.data$corr),
-          sign = ifelse(.data$corr < 0, "negative", "positive")
+          sign = ifelse(.data$corr < 0, "negative", "positive"),
+          hjust = ifelse(.data$abs < max(.data$abs) / 1.5, -0.1, 1.1)
         ) %>%
         ggplot(aes(
           x = reorder(.data$label, .data$abs),
-          y = .data$abs
+          y = .data$abs,
+          label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))
         )) +
         geom_col(aes(fill = .data$sign)) +
-        geom_text(aes(
-          colour = .data$sign,
-          label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))
-        ),
-        size = 3, hjust = 1.1
-        ) +
         coord_flip() +
+        geom_text(aes(hjust = .data$hjust), size = 3, colour = "black") +
         guides(fill = "none", colour = "none") +
         labs(
           title = "Ranked Cross-Correlations",
@@ -447,7 +447,7 @@ corr_cross <- function(df, plot = TRUE,
         ) +
         theme_lares(pal = 4, ...)
 
-      if ((!is.na(contains)[1] & length(contains) == 1) & grid) {
+      if ((!is.na(contains)[1] && length(contains) == 1) && grid) {
         p <- p + facet_grid(.data$facet ~ ., scales = "free", space = "free")
       }
     }

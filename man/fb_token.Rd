@@ -2,9 +2,9 @@
 % Please edit documentation in R/facebook.R
 \name{fb_token}
 \alias{fb_token}
-\title{Facebook's Long Life User Token}
+\title{Facebook's Long-Life User API Token}
 \usage{
-fb_token(app_id, app_secret, token, api_version = "v13.0")
+fb_token(app_id, app_secret, token, api_version = NULL)
 }
 \arguments{
 \item{app_id, app_secret}{Character. Application ID and Secret.}
@@ -13,10 +13,11 @@ fb_token(app_id, app_secret, token, api_version = "v13.0")
 \href{https://developers.facebook.com/tools/explorer}{API Graph}
 or with this same \code{fb_token()}'s token.}
 
-\item{api_version}{Character. Facebook API version}
+\item{api_version}{Character. Facebook API version.}
 }
 \value{
-Character. String with token requested.
+Character. String with token requested. If successful, it'll contain
+an attribute called "expiration" with date and time of expiration.
 }
 \description{
 Using a 1-hour generic user token you can generate a 60 day token.
@@ -34,24 +35,22 @@ Other API:
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{li_auth}()},
 \code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

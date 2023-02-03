@@ -10,8 +10,9 @@ fb_ads(
   start_date = Sys.Date() - 31,
   end_date = Sys.Date(),
   fields = NA,
-  api_version = "v13.0",
-  process = TRUE
+  api_version = NULL,
+  process = TRUE,
+  ...
 )
 }
 \arguments{
@@ -23,17 +24,17 @@ to acquire one.}
 or ads IDs to be queried. Remember: if \code{report_level = "account"}, you must
 start the ID with \code{act_}.}
 
-\item{start_date}{Character. The first and last full day to report, in the
+\item{start_date, end_date}{Character. The first and last full day to report, in the
 format \code{"YYYY-MM-DD"}.}
 
-\item{end_date}{Character. The first and last full day to report, in the
-format \code{"YYYY-MM-DD"}.}
+\item{fields}{Character, json format. Leave \code{NA} for default fields OR
+\code{NULL} to ignore.}
 
-\item{fields}{Character, json format. Leave \code{NA} for default fields.}
-
-\item{api_version}{Character. Facebook API version}
+\item{api_version}{Character. Facebook API version.}
 
 \item{process}{Boolean. Process GET results to a more friendly format?}
+
+\item{...}{Additional parameters}
 }
 \value{
 data.frame with un-nested processed results if \code{process=TRUE} or
@@ -50,10 +51,10 @@ This function was based on FBinsightsR.
 \examples{
 \dontrun{
 token <- YOURTOKEN
-which <- act_ADACCOUNT
+account <- act_ADACCOUNT
 
-# Query all ads for "which" with results in the last 10 days
-ads <- fb_accounts(YOURTOKEN, which, start_date = Sys.Date() - 10)
+# Query all ads for "which" (account) with results in the last 10 days
+ads <- fb_ads(token, account, start_date = Sys.Date() - 10)
 }
 }
 \seealso{
@@ -62,9 +63,8 @@ Other API:
 \code{\link{fb_accounts}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
@@ -72,15 +72,14 @@ Other API:
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

@@ -69,7 +69,6 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
                         palette = NULL,
                         which = "fc",
                         ...) {
-
   # Start from theme_minimal()
   ret <- theme_minimal(base_size = size)
 
@@ -125,7 +124,7 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
     )
   }
 
-  if (inherits(grid, "character") | grid == TRUE) {
+  if (inherits(grid, "character") || grid) {
     grid_col <- "#CCCCCC"
     ret <- ret + theme(panel.grid = element_line(color = grid_col, size = 0.2))
     ret <- ret + theme(panel.grid.major = element_line(color = grid_col, size = 0.1))
@@ -209,7 +208,7 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
   ))
   # Align plot title to the very left edge (more space) [ggplot2 >= 3.3.0]
   ggc <- stringr::str_split(as.character(packageVersion("ggplot2")), "\\.")[[1]]
-  if (ggc[1] >= 3 & ggc[2] >= 3) {
+  if (ggc[1] >= 3 && ggc[2] >= 3) {
     ret <- ret + theme(plot.title.position = "plot")
   }
 
@@ -263,7 +262,7 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
   # Custom palette defined in colour_palettes.R and/or lares.colours.custom options
   if (pal == 4) {
     which <- tolower(which)
-    if ((grepl("c", which) & grepl("t", which))) {
+    if ((grepl("c", which) && grepl("t", which))) {
       stop("In your 'which' parameter, pass only 'c' OR 't', not both")
     }
     # FIX: Scale for 'fill' is already present. Adding another scale for 'fill',
@@ -370,7 +369,7 @@ gg_vals <- function(layer = "fill", column = layer) {
 .font_global <- function(font, quiet = TRUE, when_not = NA) {
   if (!isTRUE(font_exists(font))) {
     if (isFALSE(is.na(font))) {
-      if (isTRUE(font != "") & !quiet) {
+      if (isTRUE(font != "") && !quiet) {
         warning(sprintf("Font '%s' is not installed, has other name, or can't be found", font))
       }
       Sys.unsetenv("LARES_FONT") # So R doesn't try again by default

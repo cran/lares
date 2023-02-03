@@ -8,8 +8,9 @@ fb_accounts(
   token,
   business_id = "904189322962915",
   type = c("owned", "client"),
-  limit = 1000,
-  api_version = "v13.0"
+  limit = 100,
+  api_version = NULL,
+  ...
 )
 }
 \arguments{
@@ -21,9 +22,11 @@ to acquire one.}
 
 \item{type}{Character vector. Values: owned, client.}
 
-\item{limit}{Integer. Query limit}
+\item{limit}{Integer. Query limit by pagination.}
 
-\item{api_version}{Character. Facebook API version}
+\item{api_version}{Character. Facebook API version.}
+
+\item{...}{Additional parameters}
 }
 \value{
 data.frame with un-nested processed results fetched with API.
@@ -45,9 +48,8 @@ Other API:
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
@@ -55,15 +57,14 @@ Other API:
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

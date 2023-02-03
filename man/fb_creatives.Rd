@@ -4,7 +4,7 @@
 \alias{fb_creatives}
 \title{Facebook Creatives API}
 \usage{
-fb_creatives(token, which, api_version = "v13.0", process = TRUE)
+fb_creatives(token, which, api_version = NULL, process = TRUE, ...)
 }
 \arguments{
 \item{token}{Character. Valid access token with sufficient privileges. Visit the
@@ -15,9 +15,11 @@ to acquire one.}
 or ads IDs to be queried. Remember: if \code{report_level = "account"}, you must
 start the ID with \code{act_}.}
 
-\item{api_version}{Character. Facebook API version}
+\item{api_version}{Character. Facebook API version.}
 
 \item{process}{Boolean. Process GET results to a more friendly format?}
+
+\item{...}{Additional parameters.}
 }
 \value{
 data.frame with un-nested processed results if \code{process=TRUE} or
@@ -29,10 +31,10 @@ For more information: \href{https://developers.facebook.com/docs/marketing-apis}
 \examples{
 \dontrun{
 token <- YOURTOKEN
-which <- act_ADACCOUNT
+account <- act_ADACCOUNT
 
-# Query all creatives for "which"
-creatives <- fb_creatives(YOURTOKEN, which)
+# Query all creatives for "which" (account in this case)
+creatives <- fb_creatives(token, account)
 }
 }
 \seealso{
@@ -41,9 +43,8 @@ Other API:
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
@@ -51,15 +52,14 @@ Other API:
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_insights}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

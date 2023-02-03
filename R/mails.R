@@ -38,7 +38,6 @@ mail_send <- function(from = "RMail <laresbernardo@gmail.com>",
                       service = "mailgun",
                       creds = NULL,
                       quiet = FALSE) {
-
   # MailGun documentation:
   # https://documentation.mailgun.com/en/latest/api-sending.html#sending
 
@@ -84,7 +83,7 @@ mail_send <- function(from = "RMail <laresbernardo@gmail.com>",
   stop_for_status(req)
 
   # Delete temporary files created
-  if (!is.null(file) & !"attachment" %in% as) file.remove(file)
+  if (!is.null(file) && !"attachment" %in% as) file.remove(file)
 
   if (!quiet) {
     message(paste(

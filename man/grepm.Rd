@@ -15,9 +15,9 @@ grepm(pattern, x, type = "all", ...)
     is used with a warning.  Missing values are allowed except for
     \code{regexpr}, \code{gregexpr} and \code{regexec}.}
 
-\item{x}{a character vector where matches are sought, or an
-    object which can be coerced by \code{as.character} to a character
-    vector.  \link[base]{Long vectors} are supported.}
+\item{x}{Character vector. Text where matches are sought, or an object
+which can be coerced by as.character to a character vector.
+Long vectors are supported.}
 
 \item{type}{Character. Type of match. Choose one of:
 \code{any}, \code{all}}
@@ -38,3 +38,40 @@ patterns <- c(1, 2)
 grepm(patterns, x, type = "any")
 grepm(patterns, x, type = "all")
 }
+\seealso{
+Other Tools: 
+\code{\link{autoline}()},
+\code{\link{bind_files}()},
+\code{\link{bring_api}()},
+\code{\link{db_download}()},
+\code{\link{db_upload}()},
+\code{\link{export_plot}()},
+\code{\link{export_results}()},
+\code{\link{files_functions}()},
+\code{\link{font_exists}()},
+\code{\link{formatColoured}()},
+\code{\link{formatHTML}()},
+\code{\link{get_credentials}()},
+\code{\link{glued}()},
+\code{\link{h2o_selectmodel}()},
+\code{\link{haveInternet}()},
+\code{\link{image_metadata}()},
+\code{\link{importxlsx}()},
+\code{\link{ip_data}()},
+\code{\link{json2vector}()},
+\code{\link{list_cats}()},
+\code{\link{listfiles}()},
+\code{\link{mail_send}()},
+\code{\link{move_files}()},
+\code{\link{msplit}()},
+\code{\link{myip}()},
+\code{\link{quiet}()},
+\code{\link{read.file}()},
+\code{\link{statusbar}()},
+\code{\link{tic}()},
+\code{\link{try_require}()},
+\code{\link{updateLares}()},
+\code{\link{warnifnot}()},
+\code{\link{what_size}()}
+}
+\concept{Tools}

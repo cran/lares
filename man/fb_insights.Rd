@@ -14,9 +14,12 @@ fb_insights(
   ad_object = "insights",
   breakdowns = NA,
   fields = NA,
-  limit = 10000,
-  api_version = "v13.0",
-  process = TRUE
+  filtering = NULL,
+  limit = 100,
+  api_version = NULL,
+  process = TRUE,
+  async = FALSE,
+  ...
 )
 }
 \arguments{
@@ -42,13 +45,24 @@ Default: each day separately (i.e. "1").}
 \item{breakdowns}{Character Vector. One or more of breakdowns for
 segmentation results. Set to NA for no breakdowns}
 
-\item{fields}{Character, json format. Leave \code{NA} for default fields.}
+\item{fields}{Character, json format. Leave \code{NA} for default fields OR
+\code{NULL} to ignore.}
 
-\item{limit}{Integer. Query limit}
+\item{filtering}{List. Each filter will be a list containing "field",
+"operator", and "value". Read more about the operators in the official
+\href{https://developers.facebook.com/docs/marketing-api/insights/parameters}{docs}.
+Example: \code{dplyr::tibble(field = "country", operator = "IN", value = list("PE")))}.}
 
-\item{api_version}{Character. Facebook API version}
+\item{limit}{Integer. Query limit by pagination.}
+
+\item{api_version}{Character. Facebook API version.}
 
 \item{process}{Boolean. Process GET results to a more friendly format?}
+
+\item{async}{Boolean. Run an async query. When set to \code{TRUE}, instead of making
+a GET query, it'll run a POST query and will return a report run ID.}
+
+\item{...}{Additional parameters}
 }
 \value{
 data.frame with un-nested processed results if \code{process=TRUE} or
@@ -109,9 +123,8 @@ Other API:
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{li_auth}()},
@@ -119,15 +132,14 @@ Other API:
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 
-Other Facebook: 
+Other Meta: 
 \code{\link{fb_accounts}()},
 \code{\link{fb_ads}()},
 \code{\link{fb_creatives}()},
-\code{\link{fb_posts}()},
-\code{\link{fb_post}()},
 \code{\link{fb_process}()},
+\code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()}
 }
 \concept{API}
-\concept{Facebook}
+\concept{Meta}

@@ -11,7 +11,7 @@
 #' @param label String. With additionaly information to be printed
 #' at the end of the line. The default is \code{run}.
 #' @param msg Character. Finish message.
-#' @param type Character. Loading type style: equal, domino
+#' @param type Character. Loading type style: equal, domino, sword, filled.
 #' @param start_time POSIXct. Start time to consider. If NA, then
 #' when first iteration starts will be set as start time. Useful
 #' for when first iteration is showed as done but started a few
@@ -28,18 +28,18 @@
 statusbar <- function(run = 1, max.run = 100, label = run, msg = "",
                       type = Sys.getenv("LARES_STATUSBAR"),
                       start_time = NA, multiples = 1, alarm = FALSE) {
-  if (run == 1 & is.na(start_time)) tic("startclock")
+  if (run == 1 && is.na(start_time)) tic("startclock")
   if (!is.na(start_time)) tic("startclock", start = start_time)
 
   if (multiples > 1) {
-    if (!run %% multiples == 0 & run != max.run) {
+    if (!run %% multiples == 0 && run != max.run) {
       return()
     }
   }
-  if (length(run) > 1 & !is.numeric(run)) {
+  if (length(run) > 1 && !is.numeric(run)) {
     stop("Parameter 'run' must be a numerical value!")
   }
-  if (length(max.run) == 0 & !is.numeric(run)) {
+  if (length(max.run) == 0 && !is.numeric(run)) {
     stop("Parameter 'max.run' needs to be greater than 0!")
   }
 
@@ -55,15 +55,14 @@ statusbar <- function(run = 1, max.run = 100, label = run, msg = "",
   if (type == "domino") syms <- list(first = "|", middle = "/", last = "_")
   if (type == "equal") syms <- list(first = " ", middle = "=", last = "=")
   if (type == "sword") syms <- list(first = " ", middle = ">", last = ":")
-  if (type == "filled") syms <- list(last = "\u2593", middle = "\u2593", first = "\u2591")
-
+  if (type == "filled") syms <- list(first = " ", middle = "\u2588", last = "\u2588")
 
   percent.step <- trunc(percent * width.set, 5)
   part_done <- paste0(rep(syms$last, percent.step), collapse = "")
   part_middle <- if (percent == 1) syms$last else syms$middle
   part_left <- paste0(rep(syms$first, width.set - percent.step), collapse = "")
   perc <- signif(percent * 100, 3)
-  if (percent == 1 & msg != "") label <- msg
+  if (percent == 1 && msg != "") label <- msg
   parts <- ifelse(label != "", paste("|", label), label)
   parts <- stringr::str_pad(parts, width = width.labs, pad = " ", side = "right")
 
