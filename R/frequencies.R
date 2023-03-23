@@ -304,12 +304,6 @@ scale_x_reordered <- function(..., sep = "___") {
 #' save the plot to?
 #' @return Plot when \code{plot=TRUE} and data.frame with grouped frequency results
 #' when \code{plot=FALSE}.
-#' @examples
-#' \donttest{
-#' data(dft) # Titanic dataset
-#' freqs_df(dft)
-#' freqs_df(dft, plot = TRUE)
-#' }
 #' @export
 freqs_df <- function(df,
                      max = 0.9, min = 0.0, novar = TRUE,
@@ -438,7 +432,7 @@ freqs_df <- function(df,
 
 
 ####################################################################
-#' Combinated Frequencies Plot for Categorical Features
+#' Combined Frequencies Plot for Categorical Features
 #'
 #' Plot frequencies of multiple categories within a data.frame in
 #' a new fancy way. Tidyverse friendly, based on \code{lares::freqs()},
@@ -449,17 +443,6 @@ freqs_df <- function(df,
 #' @family Visualization
 #' @inheritParams freqs
 #' @return Plot. Result of the frequency of combined variables.
-#' @examples
-#' Sys.unsetenv("LARES_FONT") # Temporal
-#' data(dft) # Titanic dataset
-#'
-#' df <- freqs_plot(dft, Pclass, Survived)
-#' head(df$data)
-#' plot(df)
-#'
-#' freqs_plot(dft, Pclass, Survived, Sex, Embarked)
-#'
-#' freqs_plot(dft, Pclass, Survived, Sex, Embarked, top = 15)
 #' @export
 freqs_plot <- function(df, ..., top = 10, rm.na = FALSE, abc = FALSE,
                        title = NA, subtitle = NA) {
