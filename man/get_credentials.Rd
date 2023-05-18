@@ -9,10 +9,17 @@ get_credentials(
   from = NA,
   dir = NA,
   filename = "config.yml",
-  env = "LARES_CREDS"
+  env = "LARES_CREDS",
+  ...
 )
 
-get_creds(from = NA, dir = NA, filename = "config.yml", env = "LARES_CREDS")
+get_creds(
+  from = NA,
+  dir = NA,
+  filename = "config.yml",
+  env = "LARES_CREDS",
+  ...
+)
 }
 \arguments{
 \item{from}{Character. Family of values to import from the YML file.
@@ -28,6 +35,8 @@ If \code{dir} is a list, it'll return \code{dir} (manual credentials input).}
 
 \item{env}{Character. Environment variable name. No need to set differently
 for any function that uses this library. Only for external use.}
+
+\item{...}{Additional parameters.}
 }
 \value{
 List. Result of reading your credential's YML file, filtered by your
@@ -97,6 +106,7 @@ Other Tools:
 \code{\link{list_cats}()},
 \code{\link{listfiles}()},
 \code{\link{mail_send}()},
+\code{\link{markdown2df}()},
 \code{\link{move_files}()},
 \code{\link{msplit}()},
 \code{\link{myip}()},

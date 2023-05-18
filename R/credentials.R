@@ -32,6 +32,7 @@
 #' @param filename Character. YML filename with your credentials.
 #' @param env Character. Environment variable name. No need to set differently
 #' for any function that uses this library. Only for external use.
+#' @param ... Additional parameters.
 #' @return List. Result of reading your credential's YML file, filtered by your
 #' \code{from} input if provided.
 #' @examples
@@ -52,12 +53,12 @@
 #' @export
 get_credentials <- function(from = NA, dir = NA,
                             filename = "config.yml",
-                            env = "LARES_CREDS") {
+                            env = "LARES_CREDS",
+                            ...) {
   if (is.list(dir)) {
     return(dir)
   }
-
-  if (is.na(dir)) {
+  if (isTRUE(is.na(dir)) || isTRUE(is.null(dir))) {
     dir <- Sys.getenv(env)
     if (dir == "") {
       message(sprintf(

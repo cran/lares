@@ -304,6 +304,10 @@ scale_x_reordered <- function(..., sep = "___") {
 #' save the plot to?
 #' @return Plot when \code{plot=TRUE} and data.frame with grouped frequency results
 #' when \code{plot=FALSE}.
+#' @examples
+#' data(dft) # Titanic dataset
+#' freqs_df(dft)
+#' freqs_df(dft, plot = TRUE)
 #' @export
 freqs_df <- function(df,
                      max = 0.9, min = 0.0, novar = TRUE,
@@ -321,7 +325,7 @@ freqs_df <- function(df,
   names <- lapply(df, function(x) length(unique(x)))
   unique <- as.data.frame(names)
   colnames(unique) <- names(names)
-  which <- rownames(t(-sort(unique)))
+  which <- names(sort(-rank(unique, ties.method = "first")))
 
   # Too much variance
   no <- names(unique)[unique > nrow(df) * max]
@@ -443,6 +447,17 @@ freqs_df <- function(df,
 #' @family Visualization
 #' @inheritParams freqs
 #' @return Plot. Result of the frequency of combined variables.
+#' @examples
+#' Sys.unsetenv("LARES_FONT") # Temporal
+#' data(dft) # Titanic dataset
+#'
+#' df <- freqs_plot(dft, Pclass, Survived)
+#' head(df$data)
+#' plot(df)
+#'
+#' freqs_plot(dft, Pclass, Survived, Sex, Embarked)
+#'
+#' freqs_plot(dft, Pclass, Survived, Sex, Embarked, top = 15)
 #' @export
 freqs_plot <- function(df, ..., top = 10, rm.na = FALSE, abc = FALSE,
                        title = NA, subtitle = NA) {

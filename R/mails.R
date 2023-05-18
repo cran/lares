@@ -15,6 +15,7 @@
 #' @param creds Character. Credential's user (see \code{get_creds()}).
 #' Must contain: url (POST address), api (API key).
 #' @param quiet Boolean. Keep quite or display messages?
+#' @param ... Additional parameters.
 #' @return No return value, called for side effects.
 #' @examples
 #' \dontrun{
@@ -37,11 +38,12 @@ mail_send <- function(from = "RMail <laresbernardo@gmail.com>",
                       attachment = NULL,
                       service = "mailgun",
                       creds = NULL,
-                      quiet = FALSE) {
+                      quiet = FALSE,
+                      ...) {
   # MailGun documentation:
   # https://documentation.mailgun.com/en/latest/api-sending.html#sending
 
-  credentials <- get_credentials(from = service, dir = creds)
+  credentials <- get_credentials(from = service, dir = creds, ...)
   url <- credentials$url
   api_key <- credentials$api
 

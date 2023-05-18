@@ -40,6 +40,18 @@ Plot frequencies of multiple categories within a data.frame in
 a new fancy way. Tidyverse friendly, based on \code{lares::freqs()},
 no limits on amount of features to evaluate.
 }
+\examples{
+Sys.unsetenv("LARES_FONT") # Temporal
+data(dft) # Titanic dataset
+
+df <- freqs_plot(dft, Pclass, Survived)
+head(df$data)
+plot(df)
+
+freqs_plot(dft, Pclass, Survived, Sex, Embarked)
+
+freqs_plot(dft, Pclass, Survived, Sex, Embarked, top = 15)
+}
 \seealso{
 Other Frequency: 
 \code{\link{freqs_df}()},

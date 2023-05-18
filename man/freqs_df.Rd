@@ -46,6 +46,11 @@ when \code{plot=FALSE}.
 This function lets the user analize data by visualizing the
 frequency of each value of each column from a whole data frame.
 }
+\examples{
+data(dft) # Titanic dataset
+freqs_df(dft)
+freqs_df(dft, plot = TRUE)
+}
 \seealso{
 Other Frequency: 
 \code{\link{freqs_list}()},

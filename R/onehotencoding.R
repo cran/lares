@@ -285,13 +285,13 @@ ohe_commas <- function(df, ..., sep = ",", noval = "NoVal", remove = FALSE) {
 #' date_feats(df, drop = TRUE) %>% head(10)
 #'
 #' # Holidays given a date range and country
-#' \donttest{
+#' \dontrun{
 #' hol <- date_feats(
 #'   seq(Sys.Date() - 365, Sys.Date(), by = 1),
 #'   holidays = TRUE,
-#'   country = "Colombia"
+#'   country = "Venezuela"
 #' )
-#' head(hol[!is.na(hol$holidayname), ])
+#' head(hol[!is.na(hol$holiday_name), ])
 #' }
 #' @export
 date_feats <- function(dates,
@@ -376,7 +376,8 @@ date_feats <- function(dates,
     # Holidays data
     if (holidays) {
       result <- result %>%
-        left_join(holidays_dates, by = "values_date") %>%
+        left_join(holidays_dates, by = "values_date", relationship = "many-to-many") %>%
+        mutate(values_date_holiday_county = as.character(.data$values_date_holiday_county)) %>%
         mutate_at(vars(cols), list(~ replace(., which(is.na(.)), FALSE)))
     }
 

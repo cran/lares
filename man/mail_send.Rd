@@ -15,7 +15,8 @@ mail_send(
   attachment = NULL,
   service = "mailgun",
   creds = NULL,
-  quiet = FALSE
+  quiet = FALSE,
+  ...
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ plot as PNG or data.frame as CSV, respectively.}
 Must contain: url (POST address), api (API key).}
 
 \item{quiet}{Boolean. Keep quite or display messages?}
+
+\item{...}{Additional parameters.}
 }
 \value{
 No return value, called for side effects.
@@ -78,6 +81,7 @@ Other Tools:
 \code{\link{json2vector}()},
 \code{\link{list_cats}()},
 \code{\link{listfiles}()},
+\code{\link{markdown2df}()},
 \code{\link{move_files}()},
 \code{\link{msplit}()},
 \code{\link{myip}()},
