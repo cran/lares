@@ -11,6 +11,7 @@
 #' @param to Date. To date
 #' @param fill Boolean. Fill weekends and non-quoted dates with
 #' previous values?
+#' @param ... Additional parameters
 #' @return data.frame. Result of fetching online data for \code{currency_pair}
 #' grouped by date.
 #' @examples
@@ -24,7 +25,7 @@
 get_currency <- function(currency_pair,
                          from = Sys.Date() - 99,
                          to = Sys.Date(),
-                         fill = FALSE) {
+                         fill = FALSE, ...) {
   try_require("quantmod")
 
   string <- paste0(toupper(cleanText(currency_pair)), "=X")
@@ -42,18 +43,20 @@ get_currency <- function(currency_pair,
   x <- try(data.frame(suppressWarnings(getSymbols(
     string,
     env = NULL,
-    from = from, to = to,
-    src = "yahoo"
+    from = from,
+    to = to,
+    ...
   ))))
   if ("try-error" %in% class(x)) {
     warning(x)
     return(x)
   }
-  if (substr(rownames(x), 1, 1)[1] == "X") {
-    x <- x[1, ]
-    rownames(x) <- Sys.Date()
+  dates <- as.Date(gsub("\\.", "\\-", gsub("X", "", rownames(x))))
+  rate <- data.frame(date = dates, rate = x[, 1])
+  # Sometimes, the last date is repeated
+  if (tail(rate$date, 1) == tail(rate$date, 2)[1] && nrow(rate) > 1) {
+    rate <- rate[-nrow(rate), ]
   }
-  rate <- data.frame(date = as.Date(rownames(x)), rate = x[, 1])
 
   if (fill) {
     rate <- data.frame(date = as.character(

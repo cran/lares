@@ -3,12 +3,12 @@
 \name{gpt_ask}
 \alias{gpt_ask}
 \alias{gpt_history}
+\alias{gpt_table}
 \alias{gpt_classify}
 \alias{gpt_tag}
 \alias{gpt_extract}
 \alias{gpt_format}
 \alias{gpt_convert}
-\alias{gpt_table}
 \alias{gpt_translate}
 \title{ChatGPT API Interaction with R}
 \usage{
@@ -17,11 +17,17 @@ gpt_ask(
   secret_key = get_credentials()$openai$secret_key,
   url = Sys.getenv("LARES_GPT_URL"),
   model = Sys.getenv("LARES_GPT_MODEL"),
+  num_retries = 3,
+  temperature = 0.5,
+  max_tokens = NULL,
+  pause_base = 1,
   quiet = FALSE,
   ...
 )
 
-gpt_history()
+gpt_history(quiet = TRUE, ...)
+
+gpt_table(x, cols = NULL, quiet = TRUE, ...)
 
 gpt_classify(x, categories, quiet = TRUE, ...)
 
@@ -32,8 +38,6 @@ gpt_extract(x, extract, quiet = TRUE, ...)
 gpt_format(x, format, quiet = TRUE, ...)
 
 gpt_convert(x, unit, quiet = TRUE, ...)
-
-gpt_table(ask, quiet = TRUE, ...)
 
 gpt_translate(x, language, quiet = TRUE, ...)
 }
@@ -46,13 +50,35 @@ requested, they will be concatenated with "+" into a single request.}
 
 \item{url}{Character. Base URL for OpenAI's ChatGPT API.}
 
-\item{model}{Character. OpenAI model to use.}
+\item{model}{Character. OpenAI model to use. This can be adjusted
+according to the available models in the OpenAI API (such as "gpt-4").}
+
+\item{num_retries}{Integer. Number of times to retry the request in
+case of failure. Default is 3.}
+
+\item{temperature}{Numeric. The temperature to use for generating
+the response. Default is 0.5. The lower the \code{temperature},
+the more deterministic the results in the sense that the highest probable
+next token is always picked. Increasing temperature could lead to more
+randomness, which encourages more diverse or creative outputs. You are
+essentially increasing the weights of the other possible tokens.
+In terms of application, you might want to use a lower temperature value
+for tasks like fact-based QA to encourage more factual and concise responses.
+For poem generation or other creative tasks, it might be beneficial to
+increase the temperature value.}
+
+\item{max_tokens}{Integer. The maximum number of tokens in the response.}
+
+\item{pause_base}{Numeric. The number of seconds to wait between retries.
+Default is 1.}
 
 \item{quiet}{Boolean. Keep quiet? If not, show informative messages.}
 
 \item{...}{Additional parameters.}
 
-\item{x}{Vector. List items you wish to process}
+\item{x}{Vector. List items you wish to process in your instruction}
+
+\item{cols}{Vector. Force column names for your table results.}
 
 \item{categories, tags}{Vector. List of possible categories/tags to consider.}
 
@@ -97,14 +123,18 @@ gpt_extract(
 # Format values
 gpt_format(
   c("March 27th, 2021", "12-25-2023 3:45PM", "01.01.2000", "29 Feb 92"),
-  format = "ISO Date getting rid of timestamps"
+  format = "ISO Date getting rid of time stamps"
 )
 
-# Convert units
+# Convert temperature units
 gpt_convert(c("50C", "300K"), "Fahrenheit")
 
 # Create a table with data
 gpt_table("5 random people's address in South America, email, phone, age between 18-30")
+gpt_table(
+  ask = "5 largest cities, their countries, and population",
+  cols = c("city_name", "where", "POP")
+)
 
 # Translate text to any language
 gpt_translate(
@@ -112,7 +142,7 @@ gpt_translate(
   language = c("spanish", "chinese", "japanese", "russian", "german")
 )
 
-# Now let's read the historical prompts and replies from current session
+# Now let's read the historical prompts, replies, ano more from current session
 gpt_history()
 }
 }
@@ -131,5 +161,9 @@ Other API:
 \code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
+
+Other ChatGPT: 
+\code{\link{gpt_prompter}()}
 }
 \concept{API}
+\concept{ChatGPT}

@@ -1,7 +1,7 @@
 Package: lares
 Type: Package
 Title: Analytics & Machine Learning Sidekick
-Version: 5.2.2
+Version: 5.2.3
 Authors@R: c(
     person("Bernardo", "Lares", , "laresbernardo@gmail.com", c("aut", "cre")))
 Maintainer: Bernardo Lares <laresbernardo@gmail.com>
@@ -14,7 +14,7 @@ Imports: dplyr, ggplot2, h2o, httr, jsonlite, lubridate, openxlsx,
         patchwork, pROC, rlang, rpart, rpart.plot, rvest, stringr,
         tidyr, yaml
 Suggests: beepr, DALEX, googleAuthR, googlesheets4, knitr, quantmod,
-        rdrop2, rmarkdown
+        rmarkdown
 URL: https://github.com/laresbernardo/lares,
         https://laresbernardo.github.io/lares/
 BugReports: https://github.com/laresbernardo/lares/issues
@@ -24,7 +24,7 @@ License: AGPL-3
 Encoding: UTF-8
 LazyData: true
 NeedsCompilation: no
-Packaged: 2023-05-16 13:51:11 UTC; bernardolares
+Packaged: 2023-11-04 18:01:37 UTC; bernardo
 Author: Bernardo Lares [aut, cre]
 Repository: CRAN
-Date/Publication: 2023-05-18 10:40:02 UTC
+Date/Publication: 2023-11-04 19:20:02 UTC

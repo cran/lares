@@ -12,7 +12,7 @@
 #' to set in into your .Renviron \code{LARES_PORTFOLIO=~/dir/to/your/file.xlsx} so you
 #' can leave all other parameters as \code{NA} and use it every time.
 #' @param sheets Character Vector. Names of each sheet containing Portfolio summary,
-#' Cash, and Transactions information
+#' Cash, and Transactions information. Please, keep the order of these tabs.
 #' @param keep_old Boolean. Include sold tickers even though not currently in portfolio?
 #' @param cache Boolean. Use daily cache if available?
 #' @param quiet Boolean. Keep quiet? If not, informative messages will be printed.
@@ -40,17 +40,23 @@ stocks_file <- function(file = NA,
     results <- cache_read(cache_file, quiet = quiet)
     return(results)
   }
-
-  processFile <- function(file, keep_old = TRUE) {
-    port <- as_tibble(read.xlsx(file, sheet = sheets[1], skipEmptyRows = TRUE, detectDates = TRUE))
-    cash <- as_tibble(read.xlsx(file, sheet = sheets[2], skipEmptyRows = TRUE, detectDates = TRUE))
-    trans <- as_tibble(read.xlsx(file, sheet = sheets[3], skipEmptyRows = TRUE, detectDates = TRUE))
-    trans$Date <- as.Date(trans$Date, origin = "1970-01-01")
-    if ("Value" %in% colnames(trans)) {
-      trans <- rename(trans, Each = .data$Value, Invested = .data$Amount)
+  processFile <- function(file, sheets = NULL, keep_old = TRUE) {
+    mylist <- lapply(sheets, function(x)
+      as_tibble(read.xlsx(
+        file, sheet = x,
+        skipEmptyRows = TRUE, detectDates = TRUE)))
+    if (length(mylist) == 3) {
+      names(mylist) <- c("port", "cash", "trans")  
+      mylist$trans$Date <- try(as.Date(mylist$trans$Date, origin = "1970-01-01"))
+      if ("Value" %in% colnames(mylist$trans)) {
+        mylist$trans <- rename(mylist$trans, Each = .data$Value, Invested = .data$Amount)
+      }
+      if (!keep_old) mylist$port <- try(mylist$port[mylist$port$Stocks != 0, ])
+      mylist <- list("portfolio" = mylist$port, "transactions" = mylist$trans, "cash" = mylist$cash)
+    } 
+    if (length(mylist) == 1) {
+      mylist <- mylist[[1]]
     }
-    if (!keep_old) port <- port[port$Stocks != 0, ]
-    mylist <- list("portfolio" = port, "transactions" = trans, "cash" = cash)
     return(mylist)
   }
 
@@ -59,12 +65,12 @@ stocks_file <- function(file = NA,
   if (auto && Sys.getenv("LARES_PORTFOLIO") != "") {
     if (!quiet) message("Using BL's local file...")
     local <- Sys.getenv("LARES_PORTFOLIO")
-    results <- processFile(local, keep_old)
+    results <- processFile(local, sheets, keep_old)
   } else {
     # FOR EVERYONE'S USE
     if (!is.na(file)) {
       if (file.exists(file) || is_url(file)) {
-        results <- processFile(file, keep_old)
+        results <- processFile(file, sheets, keep_old)
       } else {
         stop("Error: that file doesn't exist or it's not in your working directory!")
       }
@@ -77,13 +83,14 @@ stocks_file <- function(file = NA,
         xlsx = FALSE, # Do not import as Excel, just download
         token_dir = creds
       )
-      results <- processFile(file, keep_old = keep_old)
+      results <- processFile(file, sheets, keep_old = keep_old)
     }
   }
-
-  attr(results$portfolio, "type") <- "stocks_file_portfolio"
-  attr(results$transactions, "type") <- "stocks_file_transactions"
-  attr(results$cash, "type") <- "stocks_file_cash"
+  if (length(results) == 3) {
+    attr(results$portfolio, "type") <- "stocks_file_portfolio"
+    attr(results$transactions, "type") <- "stocks_file_transactions"
+    attr(results$cash, "type") <- "stocks_file_cash" 
+  }
   attr(results, "type") <- "stocks_file"
   cache_write(results, cache_file, quiet = TRUE)
   return(results)
@@ -96,7 +103,8 @@ stocks_file <- function(file = NA,
 #'
 #' @family Investment
 #' @family Scrapper
-#' @param symbols Character Vector. List of symbols to download historical data
+#' @param symbols Character Vector. List of symbols to download historical data.
+#' @param ... Additional parameters.
 #' @return data.frame with Symbol, Type of stock, Quote time, current value,
 #' Daily Change, Market, and Symbol Name.
 #' @examples
@@ -106,26 +114,15 @@ stocks_file <- function(file = NA,
 #' }
 #' @export
 #' @rdname stocks_hist
-stocks_quote <- function(symbols) {
+stocks_quote <- function(symbols, ...) {
   ret <- noret <- NULL
-  qRoot <- paste0(
-    "https://query1.finance.yahoo.com/v7/finance/quote?fields=symbol,",
-    "longName,regularMarketPrice,regularMarketChange,regularMarketTime&formatted=false&symbols="
-  )
+  try_require("quantmod")
   for (i in seq_along(symbols)) {
-    z <- try(fromJSON(paste(qRoot, paste(symbols[i], collapse = ","), sep = "")))
+    z <- try(data.frame(getQuote(symbols[i], ...)))
     if ("try-error" %in% class(z)) return(invisible(ret))
-    if (length(z$quoteResponse$result) > 0) {
-      cols <- c(
-        "symbol", "quoteType", "regularMarketTime",
-        "regularMarketPrice", "regularMarketChange",
-        "market", "longName"
-      )
-      if (!"longName" %in% colnames(z$quoteResponse$result)) {
-        z$quoteResponse$result$longName <- z$quoteResponse$result$symbol
-      }
-      z <- select(z$quoteResponse$result, one_of(cols))
-      ret <- rbind(ret, z)
+    if (length(z) > 0) {
+      z <- data.frame(Symbol = symbols[i], z)
+      ret <- bind_rows(ret, z)
     } else {
       noret <- rbind(noret, symbols[i])
     }
@@ -134,9 +131,12 @@ stocks_quote <- function(symbols) {
     message(paste("No results for", vector2text(noret)))
   }
   if (length(ret) > 0) {
-    colnames(ret) <- c("Symbol", "Type", "QuoteTime", "Value", "DailyChange", "Market", "SymbolName")
-    ret <- data.frame(ret) %>%
-      mutate(QuoteTime = as.POSIXct(.data$QuoteTime, origin = "1970-01-01 00:00:00"))
+    colnames(ret) <- c(
+      "Symbol", "QuoteTime", "Value", "DailyChange",
+      "DailyChangeP", "Open", "High", "Low", "Volume")
+    ret <- as_tibble(ret) %>%
+      mutate(QuoteTime = as.POSIXct(
+        .data$QuoteTime, origin = "1970-01-01 00:00:00"))
     row.names(ret) <- NULL
     return(ret)
   }
@@ -158,14 +158,13 @@ stocks_quote <- function(symbols) {
 #' @param ... Additional parameters
 #' @examples
 #' \dontrun{
-#' # CRAN
-#' df <- stocks_hist(symbols = c("VTI", "FB", "FIW"), from = Sys.Date() - 180)
+#' df <- stocks_hist(symbols = c("VTI", "META", "FIW"), from = Sys.Date() - 180)
 #' print(head(df))
 #' plot(df)
 #' }
 #' @rdname stocks_hist
 #' @export
-stocks_hist <- function(symbols = c("VTI", "TSLA"),
+stocks_hist <- function(symbols = c("VTI", "META"),
                         from = Sys.Date() - 365,
                         to = Sys.Date(),
                         today = TRUE,
@@ -195,10 +194,11 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
       symbol <- as.character(symbols[i])
       if (as.Date(from[i]) > (Sys.Date() - 4)) from[i] <- Sys.Date() - 4
       start_date <- as.character(from[i])
-      values <- suppressWarnings(data.frame(getSymbols(
+      values <- try(suppressWarnings(data.frame(getSymbols(
         symbol,
         env = NULL, from = start_date, to = to, src = "yahoo"
-      )))
+      ))))
+      if ("try-error" %in% class(values)) next
       values <- cbind(row.names(values), as.character(symbol), values)
       colnames(values) <- c("Date", "Symbol", "Open", "High", "Low", "Close", "Volume", "Adjusted")
       values <- mutate(values, Adjusted = rowMeans(select(values, .data$High, .data$Close), na.rm = TRUE))
@@ -208,7 +208,7 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
 
       # Add right now's data
       if (today && to == Sys.Date()) {
-        now <- stocks_quote(symbol)
+        now <- stocks_quote(symbol, ...)
         # Append to historical data / replace most recent
         if (length(now) > 0) {
           now <- data.frame(
@@ -230,7 +230,7 @@ stocks_hist <- function(symbols = c("VTI", "TSLA"),
         as.character(symbol),
         from = start_date, split.adjust = FALSE
       ))
-      if (nrow(d) > 0) {
+      if (isTRUE(nrow(d) > 0)) {
         div <- data.frame(
           Symbol = rep(symbol, nrow(d)),
           Date = ymd(row.names(data.frame(d))),
@@ -326,9 +326,10 @@ plot.stocks_hist <- function(x, type = 1, ...) {
 #' @param trans Dataframe. Result from \code{stocks_file()$transactions}
 #' @param tickers Dataframe. Result from \code{stocks_file()$portfolio}
 #' @param window Character. Choose any of: "1W", "1M", "6M", "1Y", "YTD", "5Y", "MAX"
+#' @param ... Additional parameters
 #' @return data.frame. Processed at date and symbol level.
 #' @export
-daily_stocks <- function(hist, trans, tickers = NA, window = "MAX") {
+daily_stocks <- function(hist, trans, tickers = NA, window = "MAX", ...) {
   check_attr(hist, check = "stocks_hist")
   check_attr(trans, check = "stocks_file_transactions")
   if (!is.na(tickers)[1]) {
@@ -393,18 +394,19 @@ daily_stocks <- function(hist, trans, tickers = NA, window = "MAX") {
     mutate(Symbol = factor(.data$Symbol, levels = levs)) %>%
     .filter_window(window) %>%
     group_by(.data$Date) %>%
-    mutate(wt = signif(100 * .data$CumInvested / sum(.data$CumInvested), 4)) %>%
+    mutate(wt_value = weighted_value(.data$Value, n = .data$Quant),
+           wt_total = .data$wt_value * .data$Quant,
+           wt = signif(100 * .data$wt_total / sum(.data$wt_total), 4)) %>%
     ungroup()
 
   attr(daily, "type") <- "daily_stocks"
   return(daily)
 }
 
-
 ####################################################################
 #' Daily Portfolio Dataframe
 #'
-#' This function creates a dataframe will all relevant metrics and values,
+#' This function creates a dataframe with all relevant metrics and values,
 #' for the overall portfolio, for every day since inception.
 #'
 #' @family Investment
@@ -419,7 +421,8 @@ daily_portfolio <- function(hist, trans, cash, cash_fix = 0, window = "MAX") {
   check_attr(trans, check = "stocks_file_transactions")
   check_attr(cash, check = "stocks_file_cash")
 
-  temp <- expand.grid(Date = unique(hist$Date), Symbol = unique(hist$Symbol)) %>%
+  temp <- expand.grid(Date = unique(hist$Date),
+                      Symbol = unique(hist$Symbol)) %>%
     left_join(daily_stocks(hist, trans), c("Date", "Symbol")) %>%
     mutate(Date = as.Date(.data$Date)) %>%
     arrange(desc(.data$Date), .data$Symbol) %>%
@@ -478,6 +481,69 @@ daily_portfolio <- function(hist, trans, cash, cash_fix = 0, window = "MAX") {
 
   attr(ret, "type") <- "daily_portfolio"
   return(ret)
+}
+
+
+####################################################################
+#' Calculate weighted stock values using FIFO/LIFO
+#'
+#' @param value Numeric vector. Representing the values of the stock.
+#' @param n Numeric vector. Representing the volume of the operation.
+#' Positive for 'Buy' and negative for 'Sale'.
+#' @param technique Character. Pick any of FIFO or LIFO, or NULL to skip.
+#' @param n_stocks Integer. Specify the number of stocks to consider. By
+#' default will sum positive values of \code{n}.
+#' @param buy_only Boolean. Consider only buy (positive) values?
+#' @param type Integer. 1 for returning the value, 2 for returning the
+#' data.frame with the details ("df" attribute)
+#' @param ... Additional parameters
+#' @return The calculated weighted mean value.
+#' @examples
+#' values <- c(10, 20, 30, 40, 50)
+#' weights <- c(2, 3, -4, 5, 6)
+#' mean(values)
+#' weighted_value(values)
+#' weighted.mean(values, weights)
+#' weighted_value(values, weights, buy_only = FALSE)
+#' # Using FIFO and LIFO
+#' weighted_value(values, weights, "FIFO")
+#' weighted_value(values, weights, "LIFO", n_stocks = 8)
+#' @export
+weighted_value <- function(value,
+                           n = rep(1, length(value)),
+                           technique = NULL,
+                           n_stocks = NULL,
+                           buy_only = TRUE,
+                           type = 1,
+                           ...) {
+  check_opts(technique, c("FIFO", "LIFO"))
+  stopifnot(length(value) == length(n))
+  df <- data.frame(value = value, n = n, total = n)
+  if (buy_only) df <- df[df$n > 0, ]
+  if (is.null(n_stocks)) n_stocks <- sum(n, na.rm = TRUE)
+  if (nrow(df) > 0) {
+    df$id <- 1:nrow(df)
+    if ("LIFO" %in% technique) {
+      df <- df %>%
+        arrange(desc(.data$id)) %>%
+        mutate(cum = cumsum(.data$n), n_stocks = n_stocks) %>%
+        rowwise() %>%
+        mutate(total = min(.data$n, .data$n_stocks - .data$cum + .data$n),
+               total = ifelse(.data$total < 0, 0, .data$total)) %>%
+        arrange(.data$id) %>%
+        data.frame()
+    } else if ("FIFO" %in% technique) {
+      df <- df %>%
+        mutate(cum = cumsum(.data$n), n_stocks = n_stocks) %>%
+        rowwise() %>%
+        mutate(total = min(.data$n, .data$n_stocks - .data$cum + .data$n),
+               total = ifelse(.data$total < 0, 0, .data$total)) %>%
+        data.frame()
+    }
+    ret <- sum(df$value * df$total, na.rm = TRUE) / sum(df$total, na.rm = TRUE) 
+    attr(ret, "df") <- select(df, -any_of(c("id", "cum")))
+    if (type == 2) return(attr(ret, "df")) else return(ret)
+  } else return(0)
 }
 
 ################# PLOTTING FUNCTIONS #################

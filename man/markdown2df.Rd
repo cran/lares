@@ -4,10 +4,13 @@
 \alias{markdown2df}
 \title{Convert markdown string tables to data.frame}
 \usage{
-markdown2df(text)
+markdown2df(text, autoformat = TRUE)
 }
 \arguments{
 \item{text}{Character. Markdown text representing a table.}
+
+\item{autoformat}{Boolean. Automatically format numerical,
+logical and date values to their classes?}
 }
 \description{
 Convert markdown string tables to data.frame
@@ -21,6 +24,7 @@ Other Tools:
 \code{\link{autoline}()},
 \code{\link{bind_files}()},
 \code{\link{bring_api}()},
+\code{\link{chr2num}()},
 \code{\link{db_download}()},
 \code{\link{db_upload}()},
 \code{\link{export_plot}()},
