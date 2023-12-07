@@ -1,5 +1,5 @@
-0a74eae4ce35b61fb95884cee7edda77 *DESCRIPTION
-e4bad36ff5d394ab98e6ab37ee8d2698 *NAMESPACE
+edb0f19470996b2ec89b30efde292503 *DESCRIPTION
+f4cf12c0e832b33b0324755b556600c9 *NAMESPACE
 c4628fc797b8cda935a4cd2de81eab3f *R/apis.R
 68208da05211b3a6971d0e0944d732c8 *R/audio.R
 7d3f442e0179c4d7e615e64b9739d671 *R/cache.R
@@ -9,7 +9,7 @@ f45935820da9b2df3936a50208d0860c *R/clusters.R
 3827533814af63739c21598f4db77362 *R/colour_palettes.R
 d7e3cb835f3b9ce2e84bd177c0eedc30 *R/confidence.R
 6c6366070b9aef55ce12bca54effe16c *R/correlations.R
-3af3f36ca87ab0498c5fc900decc8ccf *R/cran.R
+63e11d30c57c97c680e5d09017166c9b *R/cran.R
 e7512ba93262d346bcab02dd1b4201fa *R/credentials.R
 6c88336ca8b84c1a92e7fe15d4c91de0 *R/crosstab.R
 c1dd49a0d63bef0806266a3452276a39 *R/currency.R
@@ -29,7 +29,7 @@ e628fd366a5bc67b2a42d10a93080eba *R/google_sheets.R
 65c66ed4672ba843dc4a0063f377353c *R/google_trends.R
 6b65c36f3e314b4fc01cc68e3f44b523 *R/hubspot.R
 0e19ac55bff0665f55370006fc752c28 *R/hubspot_f1.R
-d3c892921cdbbe71a40b6b57c8f35a13 *R/lares.R
+4cb5aed03f125181fe16eaeda3fe6263 *R/lares.R
 0d8ae6f0f005e32460eae83beec17fd9 *R/lasso.R
 bcd4ca0bab6348652a36f00748a31738 *R/linkedin.R
 1b609d827d4c08a86a4531f3ad55aa89 *R/logo.R
@@ -48,6 +48,7 @@ be901cdb3adc0059967f356ee8c64c62 *R/other_plots.R
 ce76d3ade468e088dceab3188946df21 *R/outliers.R
 f6a4d1c79b009755ae626f3d8987c6ee *R/plot_scales.R
 5bd5db57f8d2db87dcef67bb83586491 *R/querieSQL.R
+5224f333771e06c84ebd8aebbccb8aaa *R/robyn.R
 dd9f79fbe34296c921c43b17613e1769 *R/rtistry.R
 123d986f4da9432ce2c0ec391e570470 *R/scrabble.R
 0984a6d3301223fe65d1d604fec7f592 *R/shapley.R
@@ -65,7 +66,7 @@ ef8709447b1bd0d751ced12d8e530029 *R/tictoc.R
 eb21e8eeafda80e51a1688b6e401482d *R/typeform.R
 4661f3b2fc475ba7583fb116806b06b2 *R/update.R
 e59cf1e03b39a10d57a6e0f66dc2ed78 *R/wordle.R
-c5bcb5baff25932d2308c1caf89680aa *R/wrangling.R
+cd43f22f224b250652b958a1e2eaac11 *R/wrangling.R
 11ef9dbd6ade0da72c154e33e484c040 *R/x2y.R
 caab0eff77c1bde7370aac80d973de5f *R/zzz.R
 2ff061e5745c079a6777de02b9231770 *README.md
@@ -75,7 +76,7 @@ fb2872200e7b3ec445f724aaf4d0767c *data/dft.RData
 0ba7d78527c025db03d03e935718d8e1 *inst/_pkgdown.yml
 05dc8d1eb780dd4f5a31f4517d2a6260 *inst/doc/h2o_automl.R
 2a49ddf087d981511127a0a8b8544933 *inst/doc/h2o_automl.Rmd
-300d4aa9937b7b342a5a9e4e811c27cf *inst/doc/h2o_automl.html
+bdb3950a88b498f2ffa1aa85fd542109 *inst/doc/h2o_automl.html
 8cf91783cd4a4e7fe2c25d80d127028d *inst/docs/config.yml
 dea76c9731552aa757a8f0383dba17e4 *inst/docs/dummyPortfolio.xlsx
 b71227f813987aef5c7a80644618862c *inst/docs/stocksReport.Rmd
@@ -207,7 +208,7 @@ e5db7b635d52fdf3d166f585a02bfcd8 *man/mplot_topcats.Rd
 057d656d9744c4697954bf2b1fbbe306 *man/myip.Rd
 69f502c609e6bb6f90ff67a4dd4ddce9 *man/ngrams.Rd
 ad4b31c518cca3dd37216e344d8d4caf *man/noPlot.Rd
-4d43546bf2f70172c5cc7c7fbdc8d196 *man/normalize.Rd
+e247ec0571cd0829eaf70a0b7f02be39 *man/normalize.Rd
 38fcb9e176e5faea099f9c499f350be4 *man/num_abbr.Rd
 59ba9fcb7d02b90aa3538816f70df1a5 *man/ohe_commas.Rd
 999c3ceb8a724881700704c020bc290c *man/ohse.Rd
@@ -232,6 +233,8 @@ e139054f68d8d6ae7ba09b5cb51a1952 *man/read.file.Rd
 74666f194d21d0561e7a744d7f3872e5 *man/remove_stopwords.Rd
 33d3358d1dc1418fdffbe3e074205c7d *man/replaceall.Rd
 66d821f2fa6a41ba73bfa903318ac5e9 *man/replacefactor.Rd
+8ccd8263e5d2176af89cf0263a1443e7 *man/robyn_hypsbuilder.Rd
+8868c00f6b67e773cbd76c0b2c58a791 *man/robyn_modelselector.Rd
 76b1df91a9d03ee8f4c495b073b23ba1 *man/rtistry_sphere.Rd
 054118826153c715c011ffff1c15b3c9 *man/scale_x_comma.Rd
 d4395b2a4b22cb0c5c69d4e335b405e9 *man/scrabble.Rd
