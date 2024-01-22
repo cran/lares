@@ -42,13 +42,15 @@ gpt_convert(x, unit, quiet = TRUE, ...)
 gpt_translate(x, language, quiet = TRUE, ...)
 }
 \arguments{
-\item{ask}{Character. Redacted prompt to ask ChatGPT. If multiple asks are
+\item{ask}{Character. Redacted prompt to ask. If multiple asks are
 requested, they will be concatenated with "+" into a single request.}
 
 \item{secret_key}{Character. Secret Key. Get yours in:
-\href{https://platform.openai.com}{platform.openai.com}.}
+\href{https://platform.openai.com}{platform.openai.com} for OpenAI or
+\href{https://makersuite.google.com/app/apikey}{makersuite.google.com}
+for Gemini.}
 
-\item{url}{Character. Base URL for OpenAI's ChatGPT API.}
+\item{url}{Character. Base API URL.}
 
 \item{model}{Character. OpenAI model to use. This can be adjusted
 according to the available models in the OpenAI API (such as "gpt-4").}
@@ -157,6 +159,7 @@ Other API:
 \code{\link{fb_report_check}()},
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
+\code{\link{gemini_ask}()},
 \code{\link{li_auth}()},
 \code{\link{li_profile}()},
 \code{\link{queryGA}()},
@@ -164,6 +167,11 @@ Other API:
 
 Other ChatGPT: 
 \code{\link{gpt_prompter}()}
+
+Other LLM: 
+\code{\link{gemini_ask}()},
+\code{\link{gpt_prompter}()}
 }
 \concept{API}
 \concept{ChatGPT}
+\concept{LLM}

@@ -2,9 +2,9 @@
 % Please edit documentation in R/other_functions.R
 \name{what_size}
 \alias{what_size}
-\title{Calculate the size of any R object}
+\title{Calculate the size of any R object or directory}
 \usage{
-what_size(x, units = "Mb", ...)
+what_size(x = NULL, units = "Mb", path = NULL, recursive = TRUE, ...)
 }
 \arguments{
 \item{x}{Object}
@@ -12,15 +12,25 @@ what_size(x, units = "Mb", ...)
 \item{units}{Character. Specify which unit to use,
 i.e. "Gb", "Mb", "Kb".}
 
+\item{path}{a character vector of full path names; the default
+    corresponds to the working directory, \code{\link[base]{getwd}()}.  Tilde
+    expansion (see \code{\link[base]{path.expand}}) is performed.  Missing
+    values will be ignored.  Elements with a marked encoding will
+    be converted to the native encoding (and if that fails, considered
+    non-existent).}
+
+\item{recursive}{logical.  Should the listing recurse into directories?}
+
 \item{...}{further arguments passed to or from other methods.}
 }
 \description{
-Calculate the size of any R object
+Calculate the size of any R object or directory
 }
 \examples{
 what_size(seq(1:1e3), "Kb")
 what_size(seq(1:1e6))
 what_size(as.character(seq(1:1e6)))
+what_size(path = ".")
 }
 \seealso{
 Other Tools: 

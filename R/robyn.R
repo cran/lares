@@ -156,6 +156,16 @@ robyn_modelselector <- function(
     cache = TRUE,
     ...) {
   
+  if (length(OutputCollect$allSolutions) <= 1){
+    msg <- "Not enough models for model selection"
+    warning(msg)
+    ret <- invisible(list(
+      data = tibble(solID = OutputCollect$allSolutions, score = 1),
+      plot = noPlot(msg)))
+    class(ret) <- c("robyn_modelselector", class(ret))
+    return(ret)
+  }
+  
   stopifnot(length(wt) == length(metrics))
   stopifnot(length(allocator_limits) == 2)
   
@@ -166,7 +176,7 @@ robyn_modelselector <- function(
     metric_name = c(
       "R^2", ifelse(InputCollect$dep_var_type == "revenue", "ROAS", "CPA (Inversed)"),
       "Potential Boost", "Non-Zeroes", "Models in Cluster",
-      "NRMSE", "DECOMP.RSSD", "MAPE"))
+      "NRMSE (Inverted)", "DECOMP.RSSD (Inverted)", "MAPE (Inverted)"))
   check_opts(metrics, metrics_df$metric)
   
   # Metrics Used
@@ -175,8 +185,8 @@ robyn_modelselector <- function(
     left_join(data.frame(metric = metrics, wt = wt), "metric")
   
   # Add Default Potential Improvement values
+  sols <- sort(OutputCollect$allSolutions)
   if ("potential_improvement" %in% metrics & length(wt[which(metrics == "potential_improvement")]) != 0) {
-    sols <- sort(OutputCollect$allSolutions)
     cache_name <- c("robyn_modelselector", length(sols))
     if (cache & cache_exists(cache_name, ...)) {
       potOpt <- cache_read(cache_name, quiet = quiet, ...)
@@ -220,6 +230,10 @@ robyn_modelselector <- function(
       top_channels = paste(.data$rn[head(rank(-.data$roi_total, ties.method = "first"), 3)], collapse = ", "),
       zero_coef = paste(.data$rn[which(round(.data$coef, 6) == 0)], collapse = ", ")) %>%
     left_join(potOpt, "solID")
+  if (!"clusters" %in% names(OutputCollect)) {
+    OutputCollect$clusters$data <- data.frame(solID = sols, cluster = "None", top_sol = TRUE)
+    OutputCollect$clusters$clusters_means <- data.frame(cluster = "None", n = length(sols))
+  }
   temp <- OutputCollect$clusters$data %>%
     select(.data$solID, .data$cluster, .data$top_sol) %>%
     mutate(cluster = as.character(.data$cluster)) %>%
@@ -243,11 +257,11 @@ robyn_modelselector <- function(
             !"non_zeroes" %in% metrics, 0, wt[which(metrics == "non_zeroes")]) +
           normalize(.data$incluster_models) * ifelse(
             !"incluster_models" %in% metrics, 0, wt[which(metrics == "incluster_models")]) +
-          normalize(.data$nrmse) * ifelse(
+          normalize(-.data$nrmse) * ifelse(
             !"nrmse" %in% metrics, 0, wt[which(metrics == "nrmse")]) +
-          normalize(.data$decomp.rssd) * ifelse(
+          normalize(-.data$decomp.rssd) * ifelse(
             !"decomp.rssd" %in% metrics, 0, wt[which(metrics == "decomp.rssd")]) +
-          normalize(.data$mape) * ifelse(
+          normalize(-.data$mape) * ifelse(
             !"mape" %in% metrics, 0, wt[which(metrics == "mape")])
       ),
       aux = rank(-.data$score)) %>%

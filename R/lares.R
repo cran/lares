@@ -31,10 +31,10 @@
 #' update_geom_defaults xlab xlim ylab ylim
 #' @importFrom graphics box hist plot points rasterImage rect grid legend mtext
 #' @importFrom grDevices graphics.off dev.off png dev.size
-#' @importFrom h2o as.h2o h2o.automl h2o.accuracy h2o.getModel h2o.performance h2o.init
-#' h2o.removeAll h2o.download_mojo h2o.download_pojo h2o.loadModel h2o.no_progress h2o.predict
-#' h2o.predict_json h2o.saveModel h2o.varimp h2o.getVersion h2o.glm
-#' predict_contributions.H2OModel h2o.import_mojo h2o.no_progress h2o.show_progress
+# @importFrom h2o as.h2o h2o.automl h2o.accuracy h2o.getModel h2o.performance h2o.init
+# h2o.removeAll h2o.download_mojo h2o.download_pojo h2o.loadModel h2o.no_progress h2o.predict
+# h2o.predict_json h2o.saveModel h2o.varimp h2o.getVersion h2o.glm
+# predict_contributions.H2OModel h2o.import_mojo h2o.no_progress h2o.show_progress
 #' @importFrom httr GET POST oauth_endpoint oauth_app oauth1.0_token authenticate
 #' stop_for_status upload_file add_headers content http_error set_config config
 #' @importFrom jsonlite fromJSON toJSON flatten
@@ -48,7 +48,7 @@
 #' @importFrom rpart rpart rpart.control
 #' @importFrom rpart.plot rpart.rules rpart.plot
 #' @importFrom rvest html_node html_nodes html_attrs html_attr html_table html_text
-#' @importFrom stats cor quantile complete.cases na.omit sd median dist end lm predict
+#' @importFrom stats cor quantile complete.cases na.omit sd median dist end lm predict runif
 #' reorder start kmeans var xtabs as.formula prcomp p.adjust pt model.matrix qt cor.test
 #' @importFrom stringr fixed str_count str_length str_pad str_replace_all str_split
 #' str_to_title word
@@ -85,6 +85,7 @@ install_recommended <- function(progress = TRUE, all = FALSE) {
 
 # Recommended additional libraries to fully take advantage of lares library
 recommended <- list(
+  base64enc = "base64encode",
   beepr = "beep",
   circlize = c("chordDiagram", "uh"),
   DALEX = c("explain.default", "model_performance", "model_profile", "predict_parts"),
@@ -104,6 +105,13 @@ recommended <- list(
     "sheets_auth", "read_sheet", "gs4_create", "range_write",
     "gs4_auth_configure", "gs4_auth", "sheet_append"
   ),
+  h2o = c(
+    "as.h2o", "h2o.automl", "h2o.accuracy", "h2o.getModel", "h2o.performance",
+    "h2o.init", "h2o.removeAll", "h2o.download_mojo", "h2o.download_pojo",
+    "h2o.loadModel", "h2o.no_progress", "h2o.predict", "h2o.predict_json",
+    "h2o.saveModel", "h2o.varimp", "h2o.getVersion", "h2o.glm",
+    "predict_contributions.H2OModel", "h2o.import_mojo", "h2o.no_progress",
+    "h2o.show_progress"),
   knitr = c("kable", "knit"),
   methods = "as",
   mice = c("mice", "complete"),
