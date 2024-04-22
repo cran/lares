@@ -6,13 +6,14 @@
 #'
 #' @family Robyn
 #' @param channels Character vector. Paid media and organic variables names.
-#' @param media_type Character vector. Must be ength 1 or same as
+#' @param media_type Character vector. Must be length 1 or same as
 #' \code{channels}. Pick, for every \code{channels} value,
 #' what type of media it is: "online" or "offline".
 #' @param adstock Character. Pick one of: "geometric" or "weibull".
-#' @param date_type Character. Pick one of: "daily", "weekly, or "monthly".
-#' Only valid to transform thetas when using geometric adstock.
-#' @param lagged Boolean vector. Must be ength 1 or same as
+#' @param date_type Character. Pick one of: "daily", "weekly", or "monthly".
+#' Only valid to transform thetas when using geometric adstock. Set to "skip"
+#' in case you wish to leave default weekly values.
+#' @param lagged Boolean vector. Must be length 1 or same as
 #' \code{channels}. Pick, for every \code{channels} value,
 #' if you wish to have a lagged effect. Only valid for Weibull adstock.
 #' @return list with default hyperparameters ranges.
@@ -21,14 +22,13 @@
 #'   channels = c(
 #'     "branded_search_spend",
 #'     "nonbranded_search_spend",
-#'     "facebook_spend",
 #'     "print_spend",
 #'     "ooh_spend",
 #'     "tv_spend",
 #'     "radio_spend"),
 #'   media_type = c(
-#'     "online", "online", "online",
-#'     "offline", "offline", "offline", "offline"),
+#'     "online", "online", "offline", 
+#'     "offline", "offline", "offline"),
 #'   adstock = "geometric",
 #'   date_type = "weekly")
 #' @export
@@ -42,7 +42,7 @@ robyn_hypsbuilder <- function(
   # Check inputs validity
   check_opts(media_type, c("default", "online", "offline"))
   check_opts(adstock, c("geometric", "weibull", "weibull_pdf", "weibull_cdf"))
-  check_opts(date_type, c("daily", "weekly", "monthly"))
+  check_opts(date_type, c("daily", "weekly", "monthly", "skip"))
   check_opts(lagged, c(TRUE, FALSE))
   
   # Hyperparameters names
@@ -57,7 +57,8 @@ robyn_hypsbuilder <- function(
     lagged <- rep(lagged, length(channels))
   if (any(lagged) && adstock %in% c("geometric", "weibull_cdf"))
     stop("To be able to have a lagged effect you need to set 'weibull_pdf' adstock")
- 
+  stopifnot(length(channels) == length(media_type))
+  
   # Generate all combinations and data.frame
   df <- expand.grid(channels, all_hyps)
   df$media_type <- rep(media_type, length(all_hyps))
@@ -74,9 +75,8 @@ robyn_hypsbuilder <- function(
       .data$Var2 == "scales" ~ 0
     )) %>%
     mutate(high = case_when(
-      .data$Var2 == "alphas" & .data$media_type == "online" ~ 3,
+      .data$Var2 == "alphas" & .data$media_type %in% c("online", "default") ~ 3,
       .data$Var2 == "alphas" & .data$media_type == "offline" ~ 1,
-      .data$Var2 == "alphas" & .data$media_type == "default" ~ 3,
       .data$Var2 == "gammas" ~ 1,
       .data$Var2 == "thetas" ~ 0.5,
       .data$Var2 == "shapes" & isTRUE(.data$lagged) ~ 10,
@@ -89,13 +89,13 @@ robyn_hypsbuilder <- function(
     # Applies only for geometric adstock
     mutate(
       low = case_when(
-        .data$Var2 == "thetas" & date_type == "daily"~ .data$low^(1/7),
-        .data$Var2 == "thetas" & date_type == "monthly"~ .data$low^(4),
+        .data$Var2 == "thetas" & date_type == "daily" ~ .data$low^(1/7),
+        .data$Var2 == "thetas" & date_type == "monthly" ~ .data$low^(4),
         TRUE ~ .data$low
       ),
       high = case_when(
-        .data$Var2 == "thetas" & date_type == "daily"~ .data$high^(1/7),
-        .data$Var2 == "thetas" & date_type == "monthly"~ .data$high^(4),
+        .data$Var2 == "thetas" & date_type == "daily" ~ .data$high^(1/7),
+        .data$Var2 == "thetas" & date_type == "monthly" ~ .data$high^(4),
         TRUE ~ .data$high
       )
     ) %>%
@@ -119,7 +119,7 @@ robyn_hypsbuilder <- function(
 #' historical performance, etc.
 #'
 #' @family Robyn
-#' @inheritParams corr_var
+#' @inheritParams cache_write
 #' @param InputCollect,OutputCollect Robyn output objects.
 #' @param metrics Character vector. Which metrics do you want to consider?
 #' Pick any combination from: "rsq_train" for trained R squared,
@@ -139,7 +139,6 @@ robyn_hypsbuilder <- function(
 #' want to plot? Default: 5. Keep in mind they will all be considered
 #' for the calculations.
 #' @param cache Use cache functionality for allocator's results?
-#' @param ... Additional parameters passed
 #' @return list with data.frame and plot.
 #' @export
 robyn_modelselector <- function(
@@ -264,7 +263,7 @@ robyn_modelselector <- function(
           normalize(-.data$mape) * ifelse(
             !"mape" %in% metrics, 0, wt[which(metrics == "mape")])
       ),
-      aux = rank(-.data$score)) %>%
+      aux = rank(-.data$score, ties.method = "first")) %>%
     rowwise() %>%
     mutate(note = ifelse(.data$aux %in% 1:top, paste(rep("*", (top + 1) - .data$aux), collapse = ""), "")) %>%
     select(-.data$top_sol, -.data$aux) %>%
@@ -279,8 +278,12 @@ robyn_modelselector <- function(
     paste(., collapse = " | ")
   
   # Generate plot/dashboard
-  p <- dfa %>%
-    mutate(cluster = sprintf("%s (%s)", .data$cluster, .data$incluster_models),
+  sorting <- dfa %>%
+    mutate(cluster = sprintf("%s (%s)", .data$cluster, .data$incluster_models),) %>%
+    group_by(.data$cluster, .data$note) %>% tally() %>%
+    arrange(desc(.data$note)) %>% pull(.data$cluster) %>% unique()
+  pdat <- dfa %>%
+    mutate(cluster = factor(sprintf("%s (%s)", .data$cluster, .data$incluster_models), levels = sorting),
            incluster_models = .data$incluster_models / max(dfa$incluster_models, na.rm = TRUE)) %>%
     tidyr::pivot_longer(all_of(metrics)) %>%
     filter(.data$name %in% metrics) %>%
@@ -290,9 +293,10 @@ robyn_modelselector <- function(
     group_by(.data$name) %>%
     mutate(top = rank(-.data$value)) %>%
     left_join(select(dfa, .data$solID, .data$rsq_train), "solID") %>%
-    group_by(.data$cluster) %>% 
+    group_by(.data$cluster) %>%
     slice(1:((length(metrics))* n_per_cluster)) %>%
-    mutate(solID = paste(.data$note, .data$solID)) %>%
+    mutate(solID = paste(.data$note, .data$solID))
+  p <- pdat %>%
     ggplot(aes(y = reorder(.data$solID, .data$score), x = .data$value)) +
     geom_col(aes(group = .data$name, fill = .data$top)) +
     # geom_vline(xintercept = 1, alpha = 0.5) +

@@ -10,6 +10,7 @@
 #' @family API
 #' @family ChatGPT
 #' @family LLM
+#' @inheritParams cache_write
 #' @inheritParams db_download
 #' @param ask Character. Redacted prompt to ask. If multiple asks are
 #' requested, they will be concatenated with "+" into a single request.
@@ -35,7 +36,6 @@
 #' case of failure. Default is 3.
 #' @param pause_base Numeric. The number of seconds to wait between retries.
 #' Default is 1.
-#' @param ... Additional parameters.
 #' @return (Invisible) list. Content returned from API POST and processed.
 #' @examples
 #' \dontrun{
@@ -439,7 +439,7 @@ gpt_prompter <- function(instruction = NULL,
     ...
   )
   # Get rid of already used information
-  elements[c("cols")] <- NULL
+  elements["cols"] <- NULL
   # Check if something's actually being prompted
   are_null <- unlist(lapply(elements, is.null))
   if (all(are_null)) warning("No prompt provided. Set any of the elements: ", v2t(names(elements)))

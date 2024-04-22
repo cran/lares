@@ -11,6 +11,7 @@
 #' with solid default kerning pairs and geometric numbers.
 #'
 #' @family Themes
+#' @inheritParams cache_write
 #' @param font,size Character and numeric. Base font family and base size for texts.
 #' \code{Arial Narrow} is set by default when the library is loaded; you may change it
 #' with \code{Sys.setenv("LARES_FONT" = "X")} or by using this parameter manually.
@@ -36,7 +37,6 @@
 #' used as fill and the values will be used as colour.
 #' @param which Character. When \code{pal = 3}, select which colours should be
 #' added with the custom colours palette: fill, colour, text (fct) - first letters.
-#' @param ... Additional parameters passed
 #' @return Themed ggplot2 object
 #' @examples
 #' \donttest{
@@ -78,7 +78,7 @@ theme_lares <- function(font = Sys.getenv("LARES_FONT"),
   if (isFALSE(legend)) legend <- "none"
 
   # Check and set font
-  font <- .font_global(font, quiet = FALSE)
+  font <- .font_global(font, quiet = FALSE, ...)
   ret <- ret + theme(text = element_text(family = font))
 
   # Set some defaults
@@ -373,15 +373,19 @@ gg_vals <- function(layer = "fill", column = layer, cols = NULL, ...) {
   return(values)
 }
 
-.font_global <- function(font, quiet = TRUE, when_not = NA) {
-  if (!isTRUE(font_exists(font))) {
-    if (isFALSE(is.na(font))) {
-      if (isTRUE(font != "") && !quiet) {
-        warning(sprintf("Font '%s' is not installed, has other name, or can't be found", font))
+.font_global <- function(font, quiet = TRUE, when_not = NA, ...) {
+  temp <- font_exists(font, ...)
+  if (!any(isTRUE(temp))) {
+    if (isFALSE(is.na(font[1]))) {
+      if (isTRUE(font[1] != "") && !quiet) {
+        warning(sprintf("Font(s) %s not installed, with other name, or can't be found", v2t(font)))
       }
       Sys.unsetenv("LARES_FONT") # So R doesn't try again by default
       font <- when_not
     }
+  } else {
+    # Return first one that is found
+    font <- font[head(which(temp), 1)]
   }
   return(font)
 }
