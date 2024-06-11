@@ -3,14 +3,15 @@
 \name{robyn_modelselector}
 \alias{robyn_modelselector}
 \alias{plot.robyn_modelselector}
-\title{Robyn: Model Selection Viz}
+\title{Robyn: Model Selection by Weighted Criteria Scores}
 \usage{
 robyn_modelselector(
   InputCollect,
   OutputCollect,
   metrics = c("rsq_train", "performance", "potential_improvement", "non_zeroes",
-    "incluster_models"),
-  wt = c(2, 1, 1, 1, 0.1),
+    "incluster_models", "baseline_dist"),
+  wt = c(2, 1, 0, 1, 0.1, 0),
+  baseline_ref = 0,
   top = 4,
   n_per_cluster = 5,
   allocator_limits = c(0.5, 2),
@@ -28,12 +29,19 @@ robyn_modelselector(
 Pick any combination from: "rsq_train" for trained R squared,
 "performance" for ROAS or (inverse) CPA, "potential_improvement" for
 default budget allocator improvement using \code{allocator_limits},
-"non_zeroes" for non-zero beta coefficients, and "incluster_models" for
-amount of models per cluster.}
+"non_zeroes" for non-zero beta coefficients, "incluster_models" for
+amount of models per cluster, "baseline_dist" for the difference between
+the model's baseline and \code{baseline_ref} value. You can also use the
+standard MOO errors: "nrmse", "decomp.rssd", and "mape" (the lowest the
+error, the highest the score; same for "baseline_dist").}
 
 \item{wt}{Vector. Weight for each of the normalized \code{metrics} selected,
 to calculate the score and rank models. Must have the same order and length
 of \code{metrics} parameter input.}
+
+\item{baseline_ref}{Numeric value. Between 0 and 1. What is the baseline
+percentage you expect? Baseline in this case are all the sales or conversions
+from non-media channels (organic & paid). Use with "baseline_dist" metric.}
 
 \item{top}{Integer. How many ranked models to star? The better the model
 is, the more stars it will have marked.}
@@ -55,16 +63,20 @@ want to be with the budget allocator? By default, we'll consider a
 \item{x}{robyn_modelselector object}
 }
 \value{
-list with data.frame and plot.
+list with resulting ranked data.frames, weights and plot.
 }
 \description{
-Consider N models per cluster to select the right ones to study using
-several metrics to consider such as potential improvement on budget
+Consider N best models to select the right ones to study using
+several criteria/metrics such as potential improvement on budget
 allocator, how many non-zero coefficients there are, R squared,
-historical performance, etc.
+historical performance, baseline expectation, etc.
+
+Read more about this functionality in Medium post:
+\href{https://medium.com/@laresbernardo/select-the-right-mmm-candidate-based-on-your-specific-criteria-and-business-knowledge-1f583c3cb97a}{here}.
 }
 \seealso{
 Other Robyn: 
-\code{\link{robyn_hypsbuilder}()}
+\code{\link{robyn_hypsbuilder}()},
+\code{\link{robyn_performance}()}
 }
 \concept{Robyn}

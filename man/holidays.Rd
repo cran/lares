@@ -20,8 +20,8 @@ holiday dates?}
 
 \item{quiet}{Boolean. Default FALSE which disables verbosity of the function.}
 
-\item{include_regions}{Boolean. Default FALSE. If TRUE, for countries with 
-internal subdivisions, it will provide details on which sub-state the found 
+\item{include_regions}{Boolean. Default FALSE. If TRUE, for countries with
+internal subdivisions, it will provide details on which sub-state the found
 holidays apply.}
 }
 \value{
@@ -73,7 +73,7 @@ Other Scrapper:
 \code{\link{gtrends_related}()},
 \code{\link{ip_data}()},
 \code{\link{readGS}()},
-\code{\link{splot_etf}()},
+\code{\link{splot_summary}()},
 \code{\link{stocks_quote}()}
 
 Other One Hot Encoding: 

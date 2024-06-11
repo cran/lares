@@ -41,7 +41,7 @@ data.frame with the API GET request tabulated results.
 This function lets the user query Google Analytics with its API.
 More about the documentation and parameters in
 \code{googleAnalyticsR::google_analytics()} or Google Analytics'
-\href{https://ga-dev-tools.appspot.com/dimensions-metrics-explorer/}{API}
+\href{https://ga-dev-tools.google/dimensions-metrics-explorer/}{API}
 }
 \seealso{
 Other Credentials: 
@@ -52,8 +52,7 @@ Other Credentials:
 \code{\link{mail_send}()},
 \code{\link{queryDB}()},
 \code{\link{slackSend}()},
-\code{\link{stocks_file}()},
-\code{\link{stocks_report}()}
+\code{\link{stocks_file}()}
 
 Other Google: 
 \code{\link{filesGD}()},
