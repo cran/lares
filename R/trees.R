@@ -7,9 +7,9 @@
 #' @family Exploratory
 #' @family Visualization
 #' @inheritParams h2o_automl
-#' @inherit rpart::rpart
-#' @inherit rpart::rpart.control
-#' @inherit rpart.plot::rpart.plot
+#' @inheritParams rpart::rpart
+#' @inheritParams rpart::rpart.control
+#' @inheritParams rpart.plot::rpart.plot
 #' @param df Data frame
 #' @param max Integer. Maximal depth of the tree.
 #' @param min Integer. The minimum number of observations that must
@@ -121,6 +121,7 @@ tree_var <- function(df, y, type = 2, max = 3, min = 20, cp = 0,
   return(invisible(ret))
 }
 
+#' @export
 plot.tree_var <- function(x, ...) {
   if (!inherits(x, "tree_var")) {
     stop("Object must be class tree_var")

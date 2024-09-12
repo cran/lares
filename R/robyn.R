@@ -226,7 +226,7 @@ robyn_modelselector <- function(
       try_require("Robyn")
       defpot <- lapply(sols, function(x) {
         if (!quiet) statusbar(which(sols == x), length(sols), x)
-        return(suppressMessages(robyn_allocator(
+        suppressMessages(robyn_allocator(
           InputCollect = InputCollect,
           OutputCollect = OutputCollect,
           select_model = x,
@@ -236,7 +236,7 @@ robyn_modelselector <- function(
           export = FALSE,
           quiet = TRUE,
           ...
-        )))
+        ))
       })
       potOpt <- data.frame(
         solID = sols,
@@ -305,7 +305,7 @@ robyn_modelselector <- function(
     left_join(temp, "solID") %>%
     ungroup() %>%
     left_join(baselines, "solID")
-  
+
   # The following criteria are inverted because the smaller, the better
   inv <- c("baseline_dist", "nrmse", "decomp.rssd", "mape")
 
@@ -420,7 +420,7 @@ robyn_modelselector <- function(
 #' @rdname robyn_modelselector
 #' @export
 plot.robyn_modelselector <- function(x, ...) {
-  return(x$plot)
+  x$plot
 }
 
 ####################################################################
@@ -438,6 +438,13 @@ plot.robyn_modelselector <- function(x, ...) {
 #' only one available in OutputCollect, no need to define.
 #' @param totals Boolean. Add total rows. This includes summary rows
 #' (promotional which is paid and organic channels, baseline, grand total).
+#' @param marginals Boolean. Include mROAS or mCPA marginal performance metric
+#' as an additional column called "marginal". Calculations are based on
+#' mean spend and mean response with mean carryover results,
+#' between \code{start_date} and \code{end_date}.
+#' @param carryovers Boolean. Add mean percentage of carryover response for
+#' date range between \code{start_date} and \code{end_date} on paid channels.
+#' Keep in mind organic variables also have carryover but currently not showing.
 #' @return data.frame with results on ROAS/CPA, spend, response, contribution
 #' per channel, with or without total rows.
 #' @examples
@@ -450,7 +457,9 @@ plot.robyn_modelselector <- function(x, ...) {
 robyn_performance <- function(
     InputCollect, OutputCollect,
     start_date = NULL, end_date = NULL,
-    solID = NULL, totals = TRUE, quiet = FALSE, ...) {
+    solID = NULL, totals = TRUE,
+    marginals = FALSE, carryovers = FALSE,
+    quiet = FALSE, ...) {
   df <- OutputCollect$mediaVecCollect
   if (!is.null(solID)) {
     if (length(solID) > 1) {
@@ -469,6 +478,9 @@ robyn_performance <- function(
   if (is.null(end_date)) {
     end_date <- as.Date(InputCollect$window_end)
   }
+  stopifnot(start_date <= end_date)
+
+  # Filter data for ID, modeling window and selected date range
   df <- df[df$solID %in% solID, ] %>%
     filter(
       .data$ds >= InputCollect$window_start,
@@ -557,5 +569,40 @@ robyn_performance <- function(
   # Join everything together
   if (totals) ret <- rbind(ret, totals_df, totals_base, grand_total)
   ret <- left_join(ret, mktg_contr2, "channel")
+
+  # Add mROAS/mCPA
+  if (marginals) {
+    try_require("Robyn")
+    ba_temp <- robyn_allocator(
+      InputCollect = InputCollect,
+      OutputCollect = OutputCollect,
+      date_range = c(as.Date(start_date), as.Date(end_date)),
+      export = FALSE, quiet = TRUE
+    )
+    marginal <- ba_temp$dt_optimOut %>%
+      select(c("channels", "initResponseMargUnit")) %>%
+      rename(
+        "channel" = "channels",
+        "marginal" = "initResponseMargUnit"
+      )
+    ret <- left_join(ret, marginal, "channel") %>%
+      dplyr::relocate("marginal", .after = "performance")
+  }
+  # Add carryover response percentage
+  if (carryovers) {
+    try_require("Robyn")
+    carrov <- robyn_immcarr(
+      InputCollect, OutputCollect,
+      solID = solID,
+      start_date = start_date, end_date = end_date, ...
+    ) %>%
+      filter(.data$type == "Carryover")
+    mean_carryovers <- data.frame(
+      channel = carrov$rn,
+      carryover = signif(carrov$carryover_pct, 4)
+    )
+    ret <- left_join(ret, mean_carryovers, "channel") %>%
+      dplyr::relocate("carryover", .after = "response")
+  }
   return(ret)
 }

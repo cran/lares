@@ -11,6 +11,8 @@ robyn_performance(
   end_date = NULL,
   solID = NULL,
   totals = TRUE,
+  marginals = FALSE,
+  carryovers = FALSE,
   quiet = FALSE,
   ...
 )
@@ -26,6 +28,15 @@ only one available in OutputCollect, no need to define.}
 
 \item{totals}{Boolean. Add total rows. This includes summary rows
 (promotional which is paid and organic channels, baseline, grand total).}
+
+\item{marginals}{Boolean. Include mROAS or mCPA marginal performance metric
+as an additional column called "marginal". Calculations are based on
+mean spend and mean response with mean carryover results,
+between \code{start_date} and \code{end_date}.}
+
+\item{carryovers}{Boolean. Add mean percentage of carryover response for
+date range between \code{start_date} and \code{end_date} on paid channels.
+Keep in mind organic variables also have carryover but currently not showing.}
 
 \item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
 

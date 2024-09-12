@@ -129,8 +129,8 @@ gpt_ask <- function(ask,
   }
 
   # Save historical answers
-  cache <- bind_rows(
-    data.frame(ts = ts, reply = ret),
+  cache <- rbind(
+    data.frame(ts = ts, reply = toJSON(ret)),
     cache_read("GPT_HIST_REPLY", quiet = TRUE, ...)
   ) %>%
     as_tibble()
@@ -290,7 +290,7 @@ gpt_markdown2df <- function(resp) {
   }
   df <- try(markdown2df(resp))
   attr(df, "response") <- df
-  return(df)
+  df
 }
 
 # DEPRECATED: Now using the new gpt_prompter()
