@@ -136,9 +136,13 @@ robyn_hypsbuilder <- function(
 #' default budget allocator improvement using \code{allocator_limits},
 #' "non_zeroes" for non-zero beta coefficients, "incluster_models" for
 #' amount of models per cluster, "baseline_dist" for the difference between
-#' the model's baseline and \code{baseline_ref} value. You can also use the
-#' standard MOO errors: "nrmse", "decomp.rssd", and "mape" (the lowest the
-#' error, the highest the score; same for "baseline_dist").
+#' the model's baseline and \code{baseline_ref} value, "certainty" metric
+#' to minimize the channels' distance to their cluster's mean performance,
+#' weighted by spends \code{spend_wt = TRUE}, "cluster_sd" metric to score
+#' based on the paid channels' performance standard deviations in clusters.
+#' Additionally, you can use the standard MOO errors: 
+#' "nrmse", "decomp.rssd", and "mape" (the lowest the error, the highest 
+#' the score; same for "baseline_dist" and "cluster_sd").
 #' @param wt Vector. Weight for each of the normalized \code{metrics} selected,
 #' to calculate the score and rank models. Must have the same order and length
 #' of \code{metrics} parameter input.
@@ -162,10 +166,11 @@ robyn_modelselector <- function(
     metrics = c(
       "rsq_train", "performance",
       "potential_improvement",
-      "non_zeroes", "incluster_models",
-      "baseline_dist"
+      "non_zeroes", 
+      "incluster_models", "cluster_sd",
+      "certainty", "baseline_dist"
     ),
-    wt = c(2, 1, 0, 1, 0.1, 0),
+    wt = c(2, 0.5, 0, 1, 0.1, 0, 0, 0),
     baseline_ref = 0,
     top = 4,
     n_per_cluster = 5,
@@ -183,7 +188,7 @@ robyn_modelselector <- function(
     class(ret) <- c("robyn_modelselector", class(ret))
     return(ret)
   }
-
+  if (length(metrics) == 1) wt <- 1
   stopifnot(length(wt) == length(metrics))
   stopifnot(length(allocator_limits) == 2)
   stopifnot(baseline_ref >= 0 && baseline_ref <= 1)
@@ -192,16 +197,20 @@ robyn_modelselector <- function(
   metrics_df <- data.frame(
     metric = c(
       "rsq_train", "performance", "potential_improvement",
-      "non_zeroes", "incluster_models", "baseline_dist",
+      "non_zeroes", "incluster_models",
+      "baseline_dist", "certainty", "cluster_sd",
       "nrmse", "decomp.rssd", "mape"
     ),
     metric_name = c(
       "R^2", ifelse(InputCollect$dep_var_type == "revenue", "High ROAS", "Low CPA"),
       "Potential Boost", "Non-Zero Betas", "Models in Cluster",
       sprintf("Baseline Distance [%.0f%%]", signif(baseline_ref * 100, 2)),
+      "Certainty in Cluster", "Cluster Mean Std Dev",
       "1 - NRMSE", "1 - DECOMP.RSSD", "1 - MAPE"
     )
   )
+  # The following criteria are inverted because the smaller, the better
+  invert_criteria <- c("nrmse", "decomp.rssd", "mape")
   check_opts(metrics, metrics_df$metric)
 
   # Metrics Used
@@ -272,13 +281,20 @@ robyn_modelselector <- function(
 
   # Count models per cluster
   if (!"clusters" %in% names(OutputCollect)) {
-    OutputCollect$clusters$data <- data.frame(solID = sols, cluster = "None", top_sol = TRUE)
+    OutputCollect$clusters$data <- data.frame(solID = sols, cluster = "None")
     OutputCollect$clusters$clusters_means <- data.frame(cluster = "None", n = length(sols))
+    OutputCollect$clusters$df_cluster_ci <- data.frame(cluster = "None", sd = 0)
   }
+  clus_mean_sd <- OutputCollect$clusters$df_cluster_ci %>%
+    group_by(.data$cluster) %>%
+    summarise(mean_sd = mean(.data$sd, na.rm = TRUE), .groups = "drop") %>%
+    mutate(cluster_sd = normalize(-.data$mean_sd, range = c(0.01, 1)),
+           cluster = as.character(.data$cluster))
   temp <- OutputCollect$clusters$data %>%
-    select(.data$solID, .data$cluster, .data$top_sol) %>%
+    select(.data$solID, .data$cluster) %>%
     mutate(cluster = as.character(.data$cluster)) %>%
     left_join(select(OutputCollect$clusters$clusters_means, .data$cluster, .data$n), "cluster") %>%
+    left_join(clus_mean_sd, "cluster") %>%
     rename(incluster_models = "n")
 
   # Calculate baselines
@@ -291,9 +307,15 @@ robyn_modelselector <- function(
     ungroup() %>%
     filter(.data$rn == "baseline") %>%
     arrange(abs(.data$baseline)) %>%
-    mutate(baseline_dist = abs(baseline_ref - .data$baseline)) %>%
+    mutate(baseline_dist_real = abs(baseline_ref - .data$baseline),
+           baseline_dist = normalize(-.data$baseline_dist_real, range = c(
+             0, 1 - min(.data$baseline_dist_real) / max(.data$baseline_dist_real)))) %>%
     select(c("solID", "baseline", "baseline_dist")) %>%
-    arrange(desc(.data$baseline_dist))
+    arrange(.data$baseline_dist)
+
+  # Certainty Criteria: distance to cluster's mean weighted by spend
+  certainty <- certainty_score(InputCollect, OutputCollect, ...) %>%
+    select("solID", "certainty")
 
   # Gather everything up
   dfa <- OutputCollect$allPareto$resultHypParam %>%
@@ -303,43 +325,26 @@ robyn_modelselector <- function(
     left_join(non_zeroes_rate, "solID") %>%
     left_join(potOpt, "solID") %>%
     left_join(temp, "solID") %>%
+    left_join(certainty, "solID") %>%
     ungroup() %>%
     left_join(baselines, "solID")
 
-  # The following criteria are inverted because the smaller, the better
-  inv <- c("baseline_dist", "nrmse", "decomp.rssd", "mape")
-
-  # Calculate normalized and weighted scores
-  scores <- list(
-    rsq_train = normalize(dfa$rsq_train) * ifelse(
-      !"rsq_train" %in% metrics, 0, wt[which(metrics == "rsq_train")]
-    ) * ifelse("rsq_train" %in% inv, -1, 1),
-    performance = normalize(dfa$performance, na.rm = TRUE) * ifelse(
-      !"performance" %in% metrics, 0, wt[which(metrics == "performance")]
-    ) * ifelse("performance" %in% inv, -1, 1),
-    potential_improvement = normalize(dfa$potential_improvement) * ifelse(
-      !"potential_improvement" %in% metrics, 0, wt[which(metrics == "potential_improvement")]
-    ) * ifelse("potential_improvement" %in% inv, -1, 1),
-    non_zeroes = normalize(dfa$non_zeroes) * ifelse(
-      !"non_zeroes" %in% metrics, 0, wt[which(metrics == "non_zeroes")]
-    ) * ifelse("non_zeroes" %in% inv, -1, 1),
-    incluster_models = normalize(dfa$incluster_models) * ifelse(
-      !"incluster_models" %in% metrics, 0, wt[which(metrics == "incluster_models")]
-    ) * ifelse("incluster_models" %in% inv, -1, 1),
-    # The following are negative/inverted criteria when scoring
-    baseline_dist = normalize(dfa$baseline_dist) * ifelse(
-      !"baseline_dist" %in% metrics, 0, wt[which(metrics == "baseline_dist")]
-    ) * ifelse("baseline_dist" %in% inv, -1, 1),
-    nrmse = normalize(dfa$nrmse) * ifelse(
-      !"nrmse" %in% metrics, 0, wt[which(metrics == "nrmse")]
-    ) * ifelse("nrmse" %in% inv, -1, 1),
-    decomp.rssd = normalize(dfa$decomp.rssd) * ifelse(
-      !"decomp.rssd" %in% metrics, 0, wt[which(metrics == "decomp.rssd")]
-    ) * ifelse("decomp.rssd" %in% inv, -1, 1),
-    mape = normalize(dfa$mape) * ifelse(
-      !"mape" %in% metrics, 0, wt[which(metrics == "mape")]
-    ) * ifelse("mape" %in% inv, -1, 1)
-  )
+  # Helper function to calculate normalized and weighted scores
+  calculate_score <- function(metric_name, data, metrics, weights, invert_criteria) {
+    if (metric_name %in% metrics) {
+      normalized_value <- normalize(data[[metric_name]], na.rm = TRUE)
+      weight <- weights[which(metrics == metric_name)]
+      sign <- ifelse(metric_name %in% invert_criteria, -1, 1)
+      return(normalized_value * weight * sign)
+    }
+    return(0)
+  }
+  
+  # Calculate scores
+  scores <- list()
+  for (metric in metrics_df$metric) {
+    scores[[metric]] <- calculate_score(metric, dfa, metrics, wt, invert_criteria)
+  }
   dfa <- dfa %>%
     mutate(
       score = normalize(rowSums(bind_cols(scores))),
@@ -350,7 +355,7 @@ robyn_modelselector <- function(
       rep("*", (top + 1) - .data$aux),
       collapse = ""
     ), "")) %>%
-    select(-.data$top_sol, -.data$aux) %>%
+    select(-.data$aux) %>%
     arrange(desc(.data$score), desc(3), desc(4))
   if (!quiet) message("Recommended considering these models first: ", v2t(head(dfa$solID, top)))
 
@@ -370,7 +375,7 @@ robyn_modelselector <- function(
     unique()
   pdat <- dfa %>%
     # So that inverted variables have larger relative bars (darker blue)
-    mutate_at(all_of(inv), function(x) 1 - x) %>%
+    mutate_at(all_of(invert_criteria), function(x) 1 - x) %>%
     mutate(
       cluster = factor(sprintf("%s (%s)", .data$cluster, .data$incluster_models), levels = sorting),
       incluster_models = .data$incluster_models / max(dfa$incluster_models, na.rm = TRUE)
@@ -416,6 +421,70 @@ robyn_modelselector <- function(
   return(ret)
 }
 
+### Certainty Criteria: distance to cluster's mean weighted by spend
+#
+# Formula: spend rate * mean to models' performance distance ^2 * penalization
+# Channel Score = Xi = Si * (P - Pi)^2 * Penalization if outside CI
+# Model Score = Mi = norm(-sum(Xi)) between 0 and 1, being 1 a perfect certainty.
+#
+# Where:
+# Pi is model's Performance
+# P is mean Performance in Cluster
+# Si is % of total spend per channel
+#
+# So we need:
+# 1) cluster's mean, low and up CI per cluster and channel
+# 2) model's paid channels performance and spends
+certainty_score <- function(
+    InputCollect, OutputCollect,
+    penalization = 2, spend_wt = TRUE, ...) {
+  if (!"clusters" %in% names(OutputCollect)) {
+    return(data.frame(
+      solID = unique(OutputCollect$xDecompAgg$solID),
+      certainty = 0))
+  }
+  clusters <- OutputCollect$clusters$df_cluster_ci
+  perfs <- OutputCollect$xDecompAgg %>%
+    filter(!is.na(.data$mean_spend)) %>% # get rid of organic
+    filter(.data$solID %in% OutputCollect$clusters$data$solID) %>%
+    mutate(performance = .data$xDecompAgg / .data$total_spend) %>%
+    select("solID", "channel" = "rn", "spend" = "total_spend", "performance")
+  df <- perfs %>%
+    left_join(select(OutputCollect$clusters$data, "solID", "cluster"), "solID") %>%
+    left_join(clusters, by = c("cluster", "channel" = "rn")) %>%
+    select("solID", "channel", "cluster", "spend",
+      "Pi" = "performance",
+      "P" = "boot_mean", "Pmin" = "ci_low", "Pmax" = "ci_up"
+    )
+  res <- df %>%
+    group_by(.data$cluster, .data$solID) %>%
+    mutate(Si = ifelse(spend_wt == FALSE, 1, .data$spend / sum(.data$spend))) %>%
+    ungroup() %>%
+    mutate(
+      pen = ifelse(.data$P < .data$Pmax & .data$P > .data$Pmin, 1, penalization),
+      Xi = .data$Si * ((.data$P - .data$Pi)^2 * .data$pen)
+    ) %>%
+    group_by(.data$solID, .data$cluster) %>%
+    summarize(Mi = sum(.data$Xi, na.rm = TRUE), .groups = "drop") %>%
+    ungroup() %>%
+    mutate(certainty = normalize(-.data$Mi, range = c(0, 1 - min(.data$Mi) / max(.data$Mi)))) %>%
+    arrange(desc(.data$certainty))
+
+  if (FALSE) {
+    # Check best and worst
+    GeMMMa_onepagers(InputCollect, OutputCollect, res$solID[res$certainty == 1], export = FALSE)[[2]][[2]]
+    GeMMMa_onepagers(InputCollect, OutputCollect, res$solID[res$certainty == 0], export = FALSE)[[2]][[2]]
+
+    # Viz distribution of scores per cluster
+    ggplot(res, aes(x = as.character(.data$cluster), y = .data$certainty)) +
+      geom_boxplot() +
+      lares::theme_lares() +
+      lares::scale_y_percent()
+  }
+
+  return(res)
+}
+
 #' @param x robyn_modelselector object
 #' @rdname robyn_modelselector
 #' @export
@@ -438,6 +507,7 @@ plot.robyn_modelselector <- function(x, ...) {
 #' only one available in OutputCollect, no need to define.
 #' @param totals Boolean. Add total rows. This includes summary rows
 #' (promotional which is paid and organic channels, baseline, grand total).
+#' @param non_promo Boolean. Add non-promotional responses as well?
 #' @param marginals Boolean. Include mROAS or mCPA marginal performance metric
 #' as an additional column called "marginal". Calculations are based on
 #' mean spend and mean response with mean carryover results,
@@ -457,9 +527,10 @@ plot.robyn_modelselector <- function(x, ...) {
 robyn_performance <- function(
     InputCollect, OutputCollect,
     start_date = NULL, end_date = NULL,
-    solID = NULL, totals = TRUE,
+    solID = NULL, totals = TRUE, non_promo = FALSE,
     marginals = FALSE, carryovers = FALSE,
     quiet = FALSE, ...) {
+  dt_mod <- InputCollect$dt_mod
   df <- OutputCollect$mediaVecCollect
   if (!is.null(solID)) {
     if (length(solID) > 1) {
@@ -481,6 +552,14 @@ robyn_performance <- function(
   stopifnot(start_date <= end_date)
 
   # Filter data for ID, modeling window and selected date range
+  dt_mod <- dt_mod %>%
+    filter(
+      .data$ds >= InputCollect$window_start,
+      .data$ds <= InputCollect$window_end,
+      .data$ds >= start_date, .data$ds <= end_date
+    ) %>%
+    mutate(solID = solID, type = "rawSpend") %>%
+    select(c("ds", "solID", "type", InputCollect$all_media))
   df <- df[df$solID %in% solID, ] %>%
     filter(
       .data$ds >= InputCollect$window_start,
@@ -488,7 +567,7 @@ robyn_performance <- function(
       .data$ds >= start_date, .data$ds <= end_date
     ) %>%
     select(c("ds", "solID", "type", InputCollect$all_media))
-  if (nrow(df) == 0 && !quiet) {
+  if (nrow(dt_mod) == 0 && !quiet) {
     warning(sprintf(
       "No data for model %s within modeling window (%s:%s) and date range filtered (%s:%s)",
       solID, InputCollect$window_start, InputCollect$window_end,
@@ -496,7 +575,7 @@ robyn_performance <- function(
     ))
     return(NULL)
   }
-  spends <- df %>%
+  spends <- dt_mod %>%
     filter(.data$type == "rawSpend") %>%
     summarise_if(is.numeric, function(x) sum(x, na.rm = TRUE))
   response <- df %>%
@@ -532,12 +611,15 @@ robyn_performance <- function(
     )
   # Add marketing contribution to sales/conversions (dynamic depending on date)
   xdvc <- OutputCollect$xDecompVecCollect
-  xDecompPerc <- xdvc[xdvc$solID %in% solID, ] %>%
+  xDecompTotal <- xdvc[xdvc$solID %in% solID, ] %>%
     filter(.data$ds >= start_date, .data$ds <= end_date) %>%
-    summarise_if(is.numeric, function(x) sum(x, na.rm = TRUE)) %>%
+    summarise_if(is.numeric, function(x) sum(x, na.rm = TRUE))
+  xDecompPerc <- xDecompTotal %>%
     # Divide by prediction, not real values
     mutate_all(function(x) x / .$depVarHat) %>%
-    tidyr::gather(key = "channel", value = "contribution")
+    tidyr::gather(key = "channel", value = "contribution") %>%
+    mutate(response = t(xDecompTotal)[,1]) %>%
+    filter(!.data$channel %in% c("dep_var", "depVarHat"))
   mktg_contr <- filter(xDecompPerc, .data$channel %in% InputCollect$all_media)
   mksum <- sum(mktg_contr$contribution)
   mktg_contr2 <- rbind(
@@ -545,18 +627,24 @@ robyn_performance <- function(
       channel = c("PROMOTIONAL TOTAL", "BASELINE", "GRAND TOTAL"),
       contribution = c(mksum, 1 - mksum, 1)
     ),
-    mktg_contr
+    xDecompPerc[,1:2]
   )
   # Create Baseline row
   resp_baseline <- (1 - mksum) * sum(ret$response) / mksum
-  totals_base <- ret[1, 1:3] %>%
-    mutate(
-      channel = "BASELINE",
-      metric = "",
-      performance = NA,
-      spend = 0,
-      response = resp_baseline
-    )
+  base_df <- ret[1, 1:3] %>% mutate(
+    channel = "BASELINE",
+    metric = "",
+    performance = NA,
+    spend = 0,
+    response = resp_baseline
+  )
+  # Baseline (L4 - until contextual) variables
+  if (non_promo) {
+    baseL4_contr <- filter(xDecompPerc, !.data$channel %in% InputCollect$all_media)
+    base_df <- bind_rows(baseL4_contr, base_df) %>%
+      select(all_of(colnames(base_df))) %>%
+      tidyr::fill(c("solID", "start_date", "end_date", "metric", "spend"), .direction = "up") 
+  }
   # Create TOTAL row
   grand_total <- ret[1, 1:3] %>%
     mutate(
@@ -567,7 +655,7 @@ robyn_performance <- function(
       response = resp_baseline + sum(ret$response)
     )
   # Join everything together
-  if (totals) ret <- rbind(ret, totals_df, totals_base, grand_total)
+  if (totals) ret <- rbind(ret, totals_df, base_df, grand_total)
   ret <- left_join(ret, mktg_contr2, "channel")
 
   # Add mROAS/mCPA
