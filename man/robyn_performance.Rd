@@ -14,6 +14,7 @@ robyn_performance(
   non_promo = FALSE,
   marginals = FALSE,
   carryovers = FALSE,
+  new_version = FALSE,
   quiet = FALSE,
   ...
 )
@@ -41,6 +42,9 @@ between \code{start_date} and \code{end_date}.}
 date range between \code{start_date} and \code{end_date} on paid channels.
 Keep in mind organic variables also have carryover but currently not showing.}
 
+\item{new_version}{Boolean. Use dev version's new function for marginal
+calculations (if available)?}
+
 \item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
 
 \item{...}{Additional parameters.}
@@ -63,6 +67,7 @@ robyn_performance(mod$InputCollect, mod$OutputCollect)
 \seealso{
 Other Robyn: 
 \code{\link{robyn_hypsbuilder}()},
+\code{\link{robyn_marginal}()},
 \code{\link{robyn_modelselector}()}
 }
 \concept{Robyn}

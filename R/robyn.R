@@ -335,6 +335,7 @@ robyn_modelselector <- function(
       normalized_value <- normalize(data[[metric_name]], na.rm = TRUE)
       weight <- weights[which(metrics == metric_name)]
       sign <- ifelse(metric_name %in% invert_criteria, -1, 1)
+      normalized_value[is.na(normalized_value)] <- 0
       return(normalized_value * weight * sign)
     }
     return(0)
@@ -515,6 +516,8 @@ plot.robyn_modelselector <- function(x, ...) {
 #' @param carryovers Boolean. Add mean percentage of carryover response for
 #' date range between \code{start_date} and \code{end_date} on paid channels.
 #' Keep in mind organic variables also have carryover but currently not showing.
+#' @param new_version Boolean. Use dev version's new function for marginal
+#' calculations (if available)?
 #' @return data.frame with results on ROAS/CPA, spend, response, contribution
 #' per channel, with or without total rows.
 #' @examples
@@ -529,6 +532,7 @@ robyn_performance <- function(
     start_date = NULL, end_date = NULL,
     solID = NULL, totals = TRUE, non_promo = FALSE,
     marginals = FALSE, carryovers = FALSE,
+    new_version = FALSE,
     quiet = FALSE, ...) {
   dt_mod <- InputCollect$dt_mod
   df <- OutputCollect$mediaVecCollect
@@ -594,12 +598,18 @@ robyn_performance <- function(
     start_date = min(df$ds, na.rm = TRUE),
     end_date = max(df$ds, na.rm = TRUE),
     channel = InputCollect$all_media,
+    type = factor(case_match(
+      InputCollect$all_media, 
+      InputCollect$paid_media_spends ~ "Paid",
+      InputCollect$organic_vars ~ "Organic",
+      InputCollect$context_vars ~ "Context"),
+      levels = c("Paid", "Organic", "Context", NA)),
     metric = metric,
     performance = unlist(performance),
     spend = unlist(spends),
     response = unlist(response)
   ) %>%
-    arrange(desc(.data$spend))
+    arrange(.data$type, desc(.data$spend))
   # Create TOTAL row
   totals_df <- ret[1, 1:3] %>%
     mutate(
@@ -655,24 +665,41 @@ robyn_performance <- function(
       response = resp_baseline + sum(ret$response)
     )
   # Join everything together
-  if (totals) ret <- rbind(ret, totals_df, base_df, grand_total)
+  if (totals) ret <- bind_rows(ret, totals_df, base_df, grand_total)
   ret <- left_join(ret, mktg_contr2, "channel")
 
   # Add mROAS/mCPA
   if (marginals) {
     try_require("Robyn")
-    ba_temp <- robyn_allocator(
-      InputCollect = InputCollect,
-      OutputCollect = OutputCollect,
-      date_range = c(as.Date(start_date), as.Date(end_date)),
-      export = FALSE, quiet = TRUE
-    )
-    marginal <- ba_temp$dt_optimOut %>%
-      select(c("channels", "initResponseMargUnit")) %>%
-      rename(
-        "channel" = "channels",
-        "marginal" = "initResponseMargUnit"
+    # Experimental approach to add organic vars too
+    if (packageVersion("Robyn") >= "3.12.0.9007" && new_version) {
+      temp <- lapply(InputCollect$all_media, function(x) robyn_marginal(
+        InputCollect = InputCollect,
+        OutputCollect = OutputCollect,
+        select_model = solID,
+        metric_name = x,
+        metric_value = NULL,
+        date_range = c(as.Date(start_date), as.Date(end_date)),
+        marginal_unit = 1,
+        plots = FALSE, quiet = TRUE))
+      marginal <- data.frame(
+        channel = InputCollect$all_media,
+        marginal = unlist(lapply(temp, function(x) x$marginal)))
+    } else {
+      ba_temp <- robyn_allocator(
+        InputCollect = InputCollect,
+        OutputCollect = OutputCollect,
+        select_model = solID,
+        date_range = c(as.Date(start_date), as.Date(end_date)),
+        export = FALSE, quiet = TRUE, ...
       )
+      marginal <- ba_temp$dt_optimOut %>%
+        select(c("channels", "initResponseMargUnit")) %>%
+        rename(
+          "channel" = "channels",
+          "marginal" = "initResponseMargUnit"
+        ) %>% {if (metric == "CPA") mutate(., marginal = 1/.data$marginal) else .}
+    }
     ret <- left_join(ret, marginal, "channel") %>%
       dplyr::relocate("marginal", .after = "performance")
   }
@@ -692,5 +719,60 @@ robyn_performance <- function(
     ret <- left_join(ret, mean_carryovers, "channel") %>%
       dplyr::relocate("carryover", .after = "response")
   }
+  return(ret)
+}
+
+####################################################################
+#' Robyn: Marginal Performance (mROAS & mCPA) [Experimental]
+#'
+#' Calculate and plot marginal performance of any spend or organic variable.
+#'
+#' @family Robyn
+#' @inheritParams cache_write
+#' @inheritParams robyn_modelselector
+#' @param marginal_unit Additional units to calculate the marginal performance.
+#' @return list with base and marginal response results, marginal performance
+#' metric and value, and plot.
+#' @examples
+#' \dontrun{
+#' # You may load an exported model to recreate Robyn objects
+#' mod <- Robyn::robyn_recreate(json_file = "your_model.json")
+#' robyn_marginal(
+#'   InputCollect = mod$InputCollect,
+#'   OutputCollect = mod$OutputCollect, 
+#'   metric_name = "emails_O", 
+#'   metric_value = 100000, 
+#'   date_range = "all",
+#'   marginal_unit = 10000000)
+#' }
+#' @export
+robyn_marginal <- function(..., marginal_unit = 1) {
+  try_require("Robyn")
+  stopifnot(packageVersion("Robyn") >= "3.12.0.9007")
+  args <- args2 <- list(...)
+  Response1 <- robyn_response(...)
+  args$metric_value <- Response1$metric_value
+  Response1 <- do.call(robyn_response, args) 
+  args2$metric_value <- Response1$metric_value + marginal_unit
+  args2$quiet <- TRUE
+  Response2 <- do.call(robyn_response, args2)
+  ret <- list(Response1 = Response1, Response2 = Response2, inputs = args)
+  ret$inputs$marginal_unit <- marginal_unit
+  if (args$InputCollect$dep_var_type == "revenue") {
+    ret$marginal_metric <- "mROAS"
+    ret$marginal <- (Response2$sim_mean_response - Response1$sim_mean_response) /
+      (Response2$sim_mean_spend - Response1$sim_mean_spend)
+  } else {
+    ret$marginal_metric <- "mCPA"
+    ret$marginal <- (Response2$sim_mean_spend - Response1$sim_mean_spend) /
+      (Response2$sim_mean_response - Response1$sim_mean_response)
+  }
+  cap <- sprintf("\n%s: %s (marginal units: %s)", 
+                 ret$marginal_metric, 
+                 num_abbr(ret$marginal), 
+                 num_abbr(marginal_unit))
+  ret$plot <- ret$Response1$plot + labs(caption = paste0(
+    ret$Response1$plot$labels$caption, cap
+  ))
   return(ret)
 }
