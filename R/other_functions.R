@@ -65,23 +65,28 @@ try_require <- function(package, stop = TRUE, load = TRUE, lib.loc = NULL, ...) 
 #' }
 #' @export
 ip_data <- function(ip = myip(), quiet = FALSE) {
-  ip <- ip[!is.na(ip)]
-  ip <- ip[is_ip(ip)]
-  ip <- unique(ip)
-  output <- data.frame()
-  for (i in seq_along(ip)) {
-    url <- paste0("https://db-ip.com/", ip[i])
-    scrap <- content(GET(url)) %>% html_table()
-    clean <- bind_rows(scrap[[1]], scrap[[3]])
-    row <- data.frame(t(clean[, 2]))
-    colnames(row) <- clean$X1
-    row <- data.frame(id = ip[i], row)
-    output <- bind_rows(output, row)
-    if (length(ip) > 1 && !quiet) statusbar(i, length(ip), ip[i])
+  if (!haveInternet()) {
+    message("No internet connetion...")
+    invisible(NULL)
+  } else {
+    ip <- ip[!is.na(ip)]
+    ip <- ip[is_ip(ip)]
+    ip <- unique(ip)
+    output <- data.frame()
+    for (i in seq_along(ip)) {
+      url <- paste0("https://db-ip.com/", ip[i])
+      scrap <- content(GET(url)) %>% html_table()
+      clean <- bind_rows(scrap[[1]], scrap[[3]])
+      row <- data.frame(t(clean[, 2]))
+      colnames(row) <- clean$X1
+      row <- data.frame(id = ip[i], row)
+      output <- bind_rows(output, row)
+      if (length(ip) > 1 && !quiet) statusbar(i, length(ip), ip[i])
+    }
+    output <- cleanNames(output)
+    row.names(output) <- NULL
+    output
   }
-  output <- cleanNames(output)
-  row.names(output) <- NULL
-  return(output)
 }
 
 
@@ -154,7 +159,7 @@ image_metadata <- function(files) {
           beep()
         })
       }
-      return(df)
+      df
     }
   } else {
     message("No images found to process...")
@@ -211,8 +216,7 @@ listfiles <- function(folder = getwd(),
 
   row.names(df) <- NULL
   df$address <- NULL
-
-  return(df)
+  df
 }
 
 
@@ -229,8 +233,13 @@ listfiles <- function(folder = getwd(),
 #' }
 #' @export
 myip <- function() {
-  ipify <- "https://api.ipify.org/"
-  content(GET(ipify), encoding = "UTF-8")
+  if (!haveInternet()) {
+    message("No internet connetion...")
+    invisible(NULL)
+  } else {
+    ipify <- "https://api.ipify.org/"
+    try(content(GET(ipify), encoding = "UTF-8"))
+  }
 }
 
 
@@ -301,9 +310,10 @@ importxlsx <- function(file) {
 #' @export
 quiet <- function(fx, quiet = TRUE) {
   if (!quiet) {
-    return(fx)
+    fx
+  } else {
+    invisible(capture.output(fx))
   }
-  invisible(capture.output(fx))
 }
 
 
@@ -321,14 +331,16 @@ quiet <- function(fx, quiet = TRUE) {
 haveInternet <- function(thresh = 3, url = "http://www.google.com") {
   start <- Sys.time()
   if (!capabilities(what = "http/ftp")) {
-    return(FALSE)
+    FALSE
+  } else {
+    test <- try(suppressWarnings(readLines(url, n = 1)), silent = TRUE)
+    if (as.numeric(Sys.time() - start) > thresh) {
+      message("Slow internet connection but available...")
+    }
+    !inherits(test, "try-error")
   }
-  test <- try(suppressWarnings(readLines(url, n = 1)), silent = TRUE)
-  if (as.numeric(Sys.time() - start) > thresh) {
-    message("Slow internet connection but available...")
-  }
-  return(!inherits(test, "try-error"))
 }
+
 
 ####################################################################
 #' Read Files Quickly (Auto-detected)
@@ -385,7 +397,7 @@ read.file <- function(filename, current_wd = TRUE, sheet = 1, quiet = FALSE) {
     }
   }
   if (nrow(results) == 0) warning("There is no data in that file...")
-  return(results)
+  results
 }
 
 
@@ -458,7 +470,7 @@ autoline <- function(text, top = "auto", rel = 9) {
       unique()
     ret <- factor(ret, levels = aux$ret)
   }
-  return(ret)
+  ret
 }
 
 
@@ -498,48 +510,41 @@ font_exists <- function(font = "Arial Narrow", font_dirs = NULL, quiet = FALSE, 
 
 # Thanks to extrafont for the idea for this code
 ttf_find_default_path <- function(font_dirs = NULL) {
-  if (grepl("^darwin", R.version$os)) {
-    paths <-
-      c(
-        "/Library/Fonts/", # System fonts
-        "/System/Library/Fonts", # More system fonts
-        "/System/Library/Fonts/Supplemental", # More system fonts
-        "~/Library/Fonts/", # User fonts
-        font_dirs
-      )
-    return(paths[file.exists(paths)])
-  } else if (grepl("^linux-gnu", R.version$os)) {
-    paths <-
-      c(
-        "/usr/share/fonts/", # Ubuntu/Debian/Arch/Gentoo
-        "/usr/local/share/fonts/", # system-admin-guide/stable/fonts.html.en
-        "/usr/X11R6/lib/X11/fonts/TrueType/", # RH 6
-        "~/.local/share/fonts/", # Added with Gnome font viewer
-        "~/.fonts/", # User fonts
-        font_dirs
-      )
-    return(paths[file.exists(paths)])
-  } else if (grepl("^freebsd", R.version$os)) {
-    # Possible font paths, depending on installed ports
-    paths <-
-      c(
-        "/usr/local/share/fonts/truetype/",
-        "/usr/local/lib/X11/fonts/",
-        "~/.fonts/", # User fonts
-        font_dirs
-      )
-    return(paths[file.exists(paths)])
-  } else if (grepl("^mingw", R.version$os)) {
-    paths <-
-      c(
-        file.path(Sys.getenv("SystemRoot"), "Fonts"),
-        file.path(Sys.getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Fonts"),
-        font_dirs
-      )
-    return(paths[file.exists(paths)])
+  os <- R.version$os
+  paths <- if (grepl("^darwin", os)) {
+    c(
+      "/Library/Fonts/",
+      "/System/Library/Fonts",
+      "/System/Library/Fonts/Supplemental",
+      "~/Library/Fonts/",
+      font_dirs
+    )
+  } else if (grepl("^linux-gnu", os)) {
+    c(
+      "/usr/share/fonts/",
+      "/usr/local/share/fonts/",
+      "/usr/X11R6/lib/X11/fonts/TrueType/",
+      "~/.local/share/fonts/",
+      "~/.fonts/",
+      font_dirs
+    )
+  } else if (grepl("^freebsd", os)) {
+    c(
+      "/usr/local/share/fonts/truetype/",
+      "/usr/local/lib/X11/fonts/",
+      "~/.fonts/",
+      font_dirs
+    )
+  } else if (grepl("^mingw", os)) {
+    c(
+      file.path(Sys.getenv("SystemRoot"), "Fonts"),
+      file.path(Sys.getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Fonts"),
+      font_dirs
+    )
   } else {
     stop("Unknown platform. Don't know where to look for truetype fonts. Sorry!")
   }
+  paths[file.exists(paths)]
 }
 
 check_font <- function(font, font_dirs = NULL, quiet = FALSE) {
@@ -552,27 +557,28 @@ check_font <- function(font, font_dirs = NULL, quiet = FALSE) {
   font_names <- basename(ttfiles)
   nice_names <- gsub(pattern, "", font_names, ignore.case = TRUE)
   if (is.null(font)) {
-    return(nice_names)
-  }
-  if (grepl("^mingw", R.version$os)) {
-    try_require("grDevices")
-    win_fonts <- unlist(windowsFonts())
-    ret <- font %in% win_fonts
-    # font_names <- c(font_names, win_fonts)
+    nice_names
   } else {
-    ret <- font %in% nice_names
-  }
-  if (!quiet & !all(ret)) {
-    if (!is.null(font)) {
-      font_names <- font_names[
-        grepl(tolower(paste(font, collapse = "|")), tolower(font_names))
-      ]
+    if (grepl("^mingw", R.version$os)) {
+      try_require("grDevices")
+      win_fonts <- unlist(windowsFonts())
+      ret <- font %in% win_fonts
+      # font_names <- c(font_names, win_fonts)
+    } else {
+      ret <- font %in% nice_names
     }
-    if (length(font_names) > 0) {
-      message("Maybe you meant one of these:\n", v2t(sort(gsub("\\..*", "", font_names))))
+    if (!quiet & !all(ret)) {
+      if (!is.null(font)) {
+        font_names <- font_names[
+          grepl(tolower(paste(font, collapse = "|")), tolower(font_names))
+        ]
+      }
+      if (length(font_names) > 0) {
+        message("Maybe you meant one of these:\n", v2t(sort(gsub("\\..*", "", font_names))))
+      }
     }
+    ret
   }
-  return(ret)
 }
 
 
@@ -606,7 +612,7 @@ list_cats <- function(df, ..., abc = TRUE) {
     colnames(aux)[1] <- which
     ret[[which]] <- aux
   }
-  return(ret)
+  ret
 }
 
 
@@ -658,7 +664,7 @@ files_functions <- function(filename, abc = TRUE, quiet = FALSE) {
       statusbar(i, length(filename), filename[i])
     }
   }
-  return(results)
+  results
 }
 
 
@@ -701,19 +707,19 @@ move_files <- function(from, to) {
   # Final check for all files
   if (length(froms) == 0) {
     warning(sprintf("No files to move from %s...", from))
-    return(invisible(NULL))
-  }
-  if (length(tos) != length(froms)) {
-    stop("Every 'from' must have a respective 'to' filename")
-  }
-
-  # Now move/rename all files
-  for (i in seq_along(froms)) {
-    todir <- dirname(tos[i])
-    if (!isTRUE(file.info(todir)$isdir)) {
-      dir.create(todir, recursive = FALSE)
+    invisible(NULL)
+  } else {
+    if (length(tos) != length(froms)) {
+      stop("Every 'from' must have a respective 'to' filename")
     }
-    file.rename(from = froms[i], to = basename(tos[i]))
+    # Now move/rename all files
+    for (i in seq_along(froms)) {
+      todir <- dirname(tos[i])
+      if (!isTRUE(file.info(todir)$isdir)) {
+        dir.create(todir, recursive = FALSE)
+      }
+      file.rename(from = froms[i], to = basename(tos[i]))
+    }
   }
 }
 
@@ -750,53 +756,51 @@ spread_list <- function(df, col, str = NULL, replace = TRUE) {
   var <- enquo(col)
   col <- gsub('"', "", as_label(var))
   cols <- colnames(df)
-
   if (!"list" %in% unlist(lapply(df[, cols == col], class))) {
     warning("The variable provided is not a list variable")
-    return(df)
-  }
-
-  # If all values are NA, no need to proceed but to change into vector with NAs
-  if (all(unlist(lapply(df[, cols == col], is.na)))) {
-    df[, cols == col] <- rep(NA, nrow(df))
-    return(df)
-  }
-
-  # Automatic naming based on original
-  if (is.null(str)) str <- sprintf("%s_", col)
-
-  # Add character NAs name to those observations with no data, thus no names
-  nonames <- rowwise(df) %>%
-    mutate(len = length(names(!!var))) %>%
-    pull(.data$len) == 0
-  # Non-named list columns
-  if (sum(nonames) == nrow(df)) {
-    binded <- select(df, !!var) %>%
-      mutate(temp_cross_id = row_number()) %>%
-      tidyr::unnest_longer(!!var) %>%
-      mutate(key = TRUE) %>%
-      tidyr::spread(key = !!var, value = .data$key) %>%
-      replace(is.na(.), FALSE)
+    df
   } else {
-    # Named list columns
-    binded <- lapply(df[!nonames, cols == col], bind_rows) %>%
-      bind_rows() %>%
-      mutate(temp_cross_id = which(!nonames))
-    if (is.numeric(binded[[1]])) binded <- binded %>% replace(is.na(.), 0)
+    # If all values are NA, no need to proceed but to change into vector with NAs
+    if (all(unlist(lapply(df[, cols == col], is.na)))) {
+      df[, cols == col] <- rep(NA, nrow(df))
+      df
+    } else {
+      # Automatic naming based on original
+      if (is.null(str)) str <- sprintf("%s_", col)
+      # Add character NAs name to those observations with no data, thus no names
+      nonames <- rowwise(df) %>%
+        mutate(len = length(names(!!var))) %>%
+        pull(.data$len) == 0
+      # Non-named list columns
+      if (sum(nonames) == nrow(df)) {
+        binded <- select(df, !!var) %>%
+          mutate(temp_cross_id = row_number()) %>%
+          tidyr::unnest_longer(!!var) %>%
+          mutate(key = TRUE) %>%
+          tidyr::spread(key = !!var, value = .data$key) %>%
+          replace(is.na(.), FALSE)
+      } else {
+        # Named list columns
+        binded <- lapply(df[!nonames, cols == col], bind_rows) %>%
+          bind_rows() %>%
+          mutate(temp_cross_id = which(!nonames))
+        if (is.numeric(binded[[1]])) binded <- binded %>% replace(is.na(.), 0)
+      }
+
+      if (is.na(str)) str <- paste0(col, "_")
+      ids <- which(colnames(binded) == "temp_cross_id")
+      colnames(binded)[-ids] <- paste0(str, colnames(binded))[-ids]
+      done <- df %>%
+        mutate(temp_cross_id = row_number()) %>%
+        left_join(binded, "temp_cross_id") %>%
+        select(-.data$temp_cross_id)
+
+      original <- which(cols == col)
+      done <- done %>% select(1:original, starts_with(str), (original + 1):ncol(done))
+      if (replace) done <- done[, -original]
+      as_tibble(done)
+    }
   }
-
-  if (is.na(str)) str <- paste0(col, "_")
-  ids <- which(colnames(binded) == "temp_cross_id")
-  colnames(binded)[-ids] <- paste0(str, colnames(binded))[-ids]
-  done <- df %>%
-    mutate(temp_cross_id = row_number()) %>%
-    left_join(binded, "temp_cross_id") %>%
-    select(-.data$temp_cross_id)
-
-  original <- which(cols == col)
-  done <- done %>% select(1:original, starts_with(str), (original + 1):ncol(done))
-  if (replace) done <- done[, -original]
-  return(as_tibble(done))
 }
 
 
@@ -847,7 +851,7 @@ formatHTML <- function(text, color = "black", size = 20, bold = FALSE) {
   closing_span <- "</span>"
   text <- paste(text, collapse = "<br/>")
   ret <- paste0(opening_span, text, closing_span)
-  return(ret)
+  ret
 }
 
 
@@ -894,7 +898,7 @@ glued <- function(..., .sep = "", empty_lines = "keep", .envir = parent.frame())
   null_transformer <- function(text, envir) {
     out <- eval(parse(text = text, keep.source = FALSE), envir)
     if (is.null(out)) out <- ""
-    return(out)
+    out
   }
   output <- stringr::str_glue(
     ...,
@@ -906,7 +910,7 @@ glued <- function(..., .sep = "", empty_lines = "keep", .envir = parent.frame())
     lines <- stringr::str_split(output, "\n")[[1]]
     output <- glued(paste(lines[trimws(lines) != ""], collapse = "\n"))
   }
-  return(output)
+  output
 }
 
 
@@ -966,7 +970,7 @@ formatColoured <- function(txt, colour = c("yellow", "blue", "grey"), bold = FAL
   if (colour == opts[7]) code <- 36
   if (colour == opts[8]) code <- 37
   out <- paste0("\033[", ifelse(!bold, 0, 1), ";", code, "m", txt, "\033[0m")
-  if (cat) cat(out) else return(out)
+  if (cat) cat(out) else out
 }
 
 ####################################################################
@@ -1025,7 +1029,7 @@ dir_size <- function(path = getwd(), recursive = TRUE, pattern = NULL, ...) {
   size_files <- gsub("\\\t.*", "", as.numeric(size_files))
   size_files <- num_abbr(size_files, numeric = TRUE)
   class(size_files) <- "object_size"
-  return(size_files)
+  size_files
 }
 
 ####################################################################
@@ -1054,7 +1058,7 @@ markdown2df <- function(text, autoformat = TRUE) {
       chr2logical() %>%
       chr2date()
   }
-  return(df)
+  df
 }
 
 ####################################################################
@@ -1127,5 +1131,5 @@ chr2date <- function(data) {
       data <- as.Date(data, origin = "1970-01-01")
     }
   }
-  return(data)
+  data
 }

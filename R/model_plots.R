@@ -114,10 +114,8 @@ mplot_density <- function(tag,
     if (!is.na(model_name)) p <- p + labs(caption = model_name)
     if (!is.na(subtitle)) p <- p + labs(subtitle = subtitle)
   }
-
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
+  p
 }
 
 
@@ -166,57 +164,56 @@ mplot_importance <- function(var,
                              subdir = NA,
                              file_name = "viz_importance.png") {
   if (is.null(imp)) {
-    return(NULL)
-  }
-  if (length(var) != length(imp)) {
-    message("The variables and importance values vectors should be the same length.")
-    stop(message(paste("Currently, there are", length(var), "variables and", length(imp), "importance values!")))
-  }
+    NULL
+  } else {
+    if (length(var) != length(imp)) {
+      message("The variables and importance values vectors should be the same length.")
+      stop(message(paste("Currently, there are", length(var), "variables and", length(imp), "importance values!")))
+    }
 
-  if (is.na(colours[1])) {
-    colours <- "deepskyblue"
-  }
+    if (is.na(colours[1])) {
+      colours <- "deepskyblue"
+    }
 
-  out <- data.frame(var = var, imp = 100 * imp, Type = colours)
+    out <- data.frame(var = var, imp = 100 * imp, Type = colours)
 
-  if (length(var) < limit) limit <- length(var)
+    if (length(var) < limit) limit <- length(var)
 
-  output <- out[1:limit, ]
+    output <- out[1:limit, ]
 
-  p <- ggplot(
-    output,
-    aes(
-      x = reorder(.data$var, .data$imp), y = .data$imp,
-      label = formatNum(.data$imp, 1)
-    )
-  ) +
-    geom_col(aes(fill = .data$Type), width = 0.08, colour = "transparent") +
-    geom_point(aes(colour = .data$Type), size = 6.2) +
-    coord_flip() +
-    geom_text(hjust = 0.5, size = 2.1, inherit.aes = TRUE, colour = "white") +
-    labs(
-      title = paste0("Most Relevant Variables (top ", limit, " of ", length(var), ")"),
-      x = NULL, y = NULL
+    p <- ggplot(
+      output,
+      aes(
+        x = reorder(.data$var, .data$imp), y = .data$imp,
+        label = formatNum(.data$imp, 1)
+      )
     ) +
-    scale_y_continuous(
-      position = "right", expand = c(0, 0),
-      limits = c(0, 1.03 * max(output$imp))
-    ) +
-    theme_lares()
+      geom_col(aes(fill = .data$Type), width = 0.08, colour = "transparent") +
+      geom_point(aes(colour = .data$Type), size = 6.2) +
+      coord_flip() +
+      geom_text(hjust = 0.5, size = 2.1, inherit.aes = TRUE, colour = "white") +
+      labs(
+        title = paste0("Most Relevant Variables (top ", limit, " of ", length(var), ")"),
+        x = NULL, y = NULL
+      ) +
+      scale_y_continuous(
+        position = "right", expand = c(0, 0),
+        limits = c(0, 1.03 * max(output$imp))
+      ) +
+      theme_lares()
 
-  if (length(unique(output$Type)) == 1) {
-    p <- p + geom_col(fill = colours, width = 0.2, colour = "transparent") +
-      geom_point(colour = colours, size = 6) +
-      guides(fill = "none", colour = "none") +
-      geom_text(hjust = 0.5, size = 2, inherit.aes = TRUE, colour = "white")
+    if (length(unique(output$Type)) == 1) {
+      p <- p + geom_col(fill = colours, width = 0.2, colour = "transparent") +
+        geom_point(colour = colours, size = 6) +
+        guides(fill = "none", colour = "none") +
+        geom_text(hjust = 0.5, size = 2, inherit.aes = TRUE, colour = "white")
+    }
+
+    if (!is.na(model_name)) p <- p + labs(caption = model_name)
+    if (!is.na(subtitle)) p <- p + labs(subtitle = subtitle)
+    if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
+    p
   }
-
-  if (!is.na(model_name)) p <- p + labs(caption = model_name)
-  if (!is.na(subtitle)) p <- p + labs(subtitle = subtitle)
-
-  if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
 }
 
 
@@ -328,8 +325,7 @@ mplot_roc <- function(tag,
     try_require("plotly")
     p <- ggplotly(p)
   }
-
-  return(p)
+  p
 }
 
 
@@ -397,9 +393,9 @@ mplot_cuts <- function(score,
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
 
   if (table) {
-    return(deciles)
+    deciles
   } else {
-    return(p)
+    p
   }
 }
 
@@ -456,7 +452,7 @@ mplot_cuts_error <- function(tag,
     cuts$gg_pos <- ifelse(cuts$cut > thresh, 1 + just, -just)
     cuts$colour <- ifelse(cuts$gg_pos < 0, "f", "m")
     row.names(cuts) <- NULL
-    return(cuts)
+    cuts
   }
 
   # First: absolute errors
@@ -518,8 +514,7 @@ mplot_cuts_error <- function(tag,
     plot(p)
     dev.off()
   }
-
-  return(p)
+  p
 }
 
 
@@ -639,7 +634,7 @@ mplot_splits <- function(tag,
 
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
 
-  return(p)
+  p
 }
 
 
@@ -739,7 +734,7 @@ mplot_metrics <- function(results,
     dev.off()
   }
 
-  return(plot(p))
+  plot(p)
 }
 
 
@@ -822,8 +817,7 @@ mplot_lineal <- function(tag,
   if (!is.na(subtitle)) p <- p + labs(subtitle = subtitle)
   if (!is.na(model_name)) p <- p + labs(caption = model_name)
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
+  p
 }
 
 
@@ -924,7 +918,7 @@ mplot_full <- function(tag,
 
   if (save) export_plot(p, file_name, subdir = subdir, width = 15, height = 10)
 
-  if (plot) plot(p) else return(p)
+  if (plot) plot(p) else p
 }
 
 
@@ -1075,10 +1069,8 @@ mplot_conf <- function(tag, score, thresh = 0.5, abc = TRUE,
 
   if (!is.na(subtitle)) p <- p + labs(subtitle = subtitle)
   if (squared) p <- p + coord_equal()
-
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
+  p
 }
 
 
@@ -1094,6 +1086,7 @@ mplot_conf <- function(tag, score, thresh = 0.5, abc = TRUE,
 #'
 #' @family ML Visualization
 #' @inheritParams mplot_roc
+#' @inheritParams get_mp3
 #' @param target Value. Which is your target positive value? If
 #' set to 'auto', the target with largest mean(score) will be
 #' selected. Change the value to overwrite. Only works for binary classes
@@ -1102,7 +1095,6 @@ mplot_conf <- function(tag, score, thresh = 0.5, abc = TRUE,
 #' for the automatic conclussion in the plot? Set to "auto" for
 #' best value, "none" to turn off or the number of split.
 #' @param caption Character. Caption to show in plot
-#' @param quiet Boolean. Do not show message for auto target?
 #' @return Plot with gain and performance results by cuts.
 #' @examples
 #' Sys.unsetenv("LARES_FONT") # Temporal
@@ -1222,10 +1214,8 @@ mplot_gain <- function(tag, score, multis = NA, target = "auto",
   )
   if (!is.na(caption)) caption <- paste(text, caption, sep = "\n") else caption <- text
   p <- p + labs(caption = caption)
-
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
+  p
 }
 
 
@@ -1369,10 +1359,8 @@ mplot_response <- function(tag, score, multis = NA, target = "auto",
   )
   if (!is.na(caption)) caption <- paste(text, caption, sep = "\n") else caption <- text
   p <- p + labs(caption = caption)
-
   if (save) export_plot(p, file_name, subdir = subdir, width = 6, height = 6)
-
-  return(p)
+  p
 }
 
 
@@ -1458,7 +1446,6 @@ mplot_topcats <- function(tag, score, multis, model_name = NA) {
     ) +
     scale_y_percent(limits = c(0, 1)) +
     theme_lares()
-
   p <- p1 + p2
-  return(p)
+  p
 }

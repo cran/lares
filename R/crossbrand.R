@@ -10,6 +10,7 @@
 #' For best results, ensure channels have similar granularity across
 #' markets to simplify interpretation and application of the outputs.
 #'
+#' @inheritParams get_mp3
 #' @param budget_constr_low,budget_constr_up Numeric vector. Relative minimum
 #' and maximum budgets to consider based on \code{initial_budgets}.
 #' By default it'll consider 50% and 150% budget constraints.
@@ -17,8 +18,6 @@
 #' @param cores Integer. How many cores to use for parallel computations?
 #' Set to 1 to not use this option.
 #' Default will the minimum between 10 cores and all available cores - 1.
-#' @param quiet Boolean. Keep quiet? If not,
-#' informative messages will be printed.
 #' @param ... Additional parameters to be passed to internal functions.
 #' @return Invisible vector with results by letter.
 #' @examples
@@ -135,11 +134,11 @@ robyn_xmodels <- function(
       )
     }
     if (isales) {
-      return(unlist(lapply(bas, function(x) {
+      unlist(lapply(bas, function(x) {
         x$dt_optimOut$optmResponseTotal[1] - x$dt_optimOut$initResponseTotal[1]
-      })))
+      }))
     } else {
-      return(bas)
+      bas
     }
   }
 
@@ -162,12 +161,9 @@ robyn_xmodels <- function(
       channel_constr_low = channel_constr_low,
       channel_constr_up = channel_constr_up, ...
     )
-
     # Calculate the penalty for not using the total budget
     budget_penalty <- abs(sum(budgets) - total_budget)
-
-    # return(isales - budget_penalty)
-    return(sum(isales) - budget_penalty)
+    sum(isales) - budget_penalty
   }
 
   # Optimize budgets across brands
@@ -291,7 +287,7 @@ robyn_xmodels <- function(
     other_arguments = list(...)
   )
   class(out) <- c("robyn_crossmmm", class(out))
-  return(out)
+  out
 }
 
 #' @rdname robyn_crossmmm

@@ -10,46 +10,47 @@
 #' @param lang_dic Character. Any of "en","es","de","fr". Set to NULL
 #' if you wish to skip this step (and use \code{words} parameter in
 #' \code{scrabble_words} instead).
-#' @param quiet Boolean. Keep quiet? If not, print informative messages.
 #' @return data.frame with words and language columns.
-#' @examples
-#' \donttest{
-#' # For Spanish words
-#' dictionary <- scrabble_dictionary("es")
-#' }
 #' @export
 #' @rdname scrabble
 scrabble_dictionary <- function(lang_dic, quiet = FALSE) {
   if (is.null(lang_dic)) {
-    return(invisible(NULL))
-  }
-  if (length(lang_dic) != 1) {
-    stop("Select only 1 language at a time...")
-  }
-  check_opts(lang_dic, c("en", "es", "de", "fr"))
-  if (cache_exists(lang_dic)) {
-    words <- cache_read(lang_dic, quiet = quiet)
-    if (!quiet) {
-      message(sprintf(
-        ">>> Loaded %s '%s' words",
-        formatNum(nrow(words), 0), lang_dic
-      ))
+    invisible(NULL)
+  } else {
+    if (length(lang_dic) != 1) {
+      stop("Select only 1 language at a time...")
     }
-    return(words)
+    check_opts(lang_dic, c("en", "es", "de", "fr"))
+    if (cache_exists(lang_dic)) {
+      words <- cache_read(lang_dic, quiet = quiet)
+      if (!quiet) {
+        message(sprintf(
+          ">>> Loaded %s '%s' words",
+          formatNum(nrow(words), 0), lang_dic
+        ))
+      }
+      words
+    } else {
+      if (!haveInternet()) {
+        message("No internet connetion...")
+        invisible(NULL)
+      } else {
+        message(sprintf(
+          ">>> Downloading '%s' words. Source: %s",
+          lang_dic, "github.com/lorenbrichter/Words"
+        ))
+        url <- sprintf(
+          "https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/%s.txt",
+          lang_dic
+        )
+        words <- read.table(url, col.names = "words")
+        words$language <- lang_dic
+        cache_write(words, lang_dic, quiet = quiet)
+        if (!quiet) message(sprintf(">>> Saved (%s words) into cache", formatNum(nrow(words), 0)))
+        words
+      }
+    }
   }
-  message(sprintf(
-    ">>> Downloading '%s' words. Source: %s",
-    lang_dic, "github.com/lorenbrichter/Words"
-  ))
-  url <- sprintf(
-    "https://raw.githubusercontent.com/lorenbrichter/Words/master/Words/%s.txt",
-    lang_dic
-  )
-  words <- read.table(url, col.names = "words")
-  words$language <- lang_dic
-  cache_write(words, lang_dic, quiet = quiet)
-  if (!quiet) message(sprintf(">>> Saved (%s words) into cache", formatNum(nrow(words), 0)))
-  return(words)
 }
 
 
@@ -67,18 +68,23 @@ scrabble_dictionary <- function(lang_dic, quiet = FALSE) {
 #' @return data.frame with word, scores, and length values for each \code{word}.
 #' @examples
 #' \donttest{
-#' # For Spanish words (default)
-#' es_scores <- scrabble_points("es")
-#' # Custom scores for each letter
-#' cu_scores <- data.frame(
-#'   tiles = tolower(LETTERS),
-#'   scores = c(1, 1, 1, 1, 1, 1, 1, 5, 1, 1, 5, 2, 4, 2, 1, 4, 10, 1, 1, 1, 2, 5, 4, 8, 3, 10)
-#' )
+#' if (haveInternet()) {
+#'   # For Spanish words (default)
+#'   es_scores <- scrabble_points("es")
+#'   # Custom scores for each letter
+#'   cu_scores <- data.frame(
+#'     tiles = tolower(LETTERS),
+#'     scores = c(
+#'       1, 1, 1, 1, 1, 1, 1, 5, 1, 1, 5, 2, 4, 2, 1,
+#'       4, 10, 1, 1, 1, 2, 5, 4, 8, 3, 10
+#'     )
+#'   )
 #'
-#' # Score values for each set of rules
-#' words <- c("Bernardo", "Whiskey", "R is great")
-#' scrabble_score(words, es_scores)
-#' scrabble_score(words, cu_scores)
+#'   # Score values for each set of rules
+#'   words <- c("Bernardo", "Whiskey", "R is great")
+#'   scrabble_score(words, es_scores)
+#'   scrabble_score(words, cu_scores)
+#' }
 #' }
 #' @export
 #' @rdname scrabble
@@ -93,10 +99,9 @@ scrabble_score <- function(words, scores.df) {
     })
   })
   scores <- unlist(lapply(counter, function(x) sum(unlist(x) * scores$scores)))
-  done <- data.frame(word = words, scores) %>%
+  data.frame(word = words, scores) %>%
     mutate(length = nchar(word)) %>%
     arrange(desc(scores))
-  return(done)
 }
 
 
@@ -121,40 +126,42 @@ scrabble_score <- function(words, scores.df) {
 scrabble_points <- function(lang) {
   if (is.null(lang)) {
     message(">>> Skipping points schema...")
-    return(invisible(NULL))
+    invisible(NULL)
+  } else {
+    if (!lang %in% c("en", "es", "chars", "unique")) {
+      message("There are no points structure for this language/system yet")
+      invisible(NULL)
+    } else {
+      if (lang == "es") {
+        scores <- data.frame(
+          tiles = c(
+            tolower(LETTERS)[1:14], intToUtf8(241),
+            tolower(LETTERS)[15:length(LETTERS)]
+          ),
+          scores = c(
+            1, 3, 2, 2, 1, 4, 3, 4, 1, 8, 10, 1, 3, 1,
+            8, 1, 3, 5, 1, 1, 1, 2, 4, 10, 10, 5, 10
+          )
+        )
+      }
+      if (lang == "en") {
+        scores <- data.frame(
+          tiles = tolower(LETTERS),
+          scores = c(
+            1, 4, 4, 2, 1, 4, 3, 3, 1, 10, 5, 2, 4,
+            2, 1, 4, 10, 1, 1, 1, 2, 5, 4, 8, 3, 10
+          )
+        )
+      }
+      if (lang %in% c("chars", "unique")) {
+        scores <- data.frame(
+          tiles = tolower(LETTERS)
+        ) %>% mutate(scores = 1)
+      }
+      message(sprintf(">>> Points system: '%s'", lang))
+      scores
+    }
   }
-  if (!lang %in% c("en", "es", "chars", "unique")) {
-    message("There are no points structure for this language/system yet")
-    return(invisible(NULL))
-  }
-  if (lang == "es") {
-    scores <- data.frame(
-      tiles = c(
-        tolower(LETTERS)[1:14], intToUtf8(241),
-        tolower(LETTERS)[15:length(LETTERS)]
-      ),
-      scores = c(
-        1, 3, 2, 2, 1, 4, 3, 4, 1, 8, 10, 1, 3, 1,
-        8, 1, 3, 5, 1, 1, 1, 2, 4, 10, 10, 5, 10
-      )
-    )
-  }
-  if (lang == "en") {
-    scores <- data.frame(
-      tiles = tolower(LETTERS),
-      scores = c(
-        1, 4, 4, 2, 1, 4, 3, 3, 1, 10, 5, 2, 4,
-        2, 1, 4, 10, 1, 1, 1, 2, 5, 4, 8, 3, 10
-      )
-    )
-  }
-  if (lang %in% c("chars", "unique")) {
-    scores <- data.frame(
-      tiles = tolower(LETTERS)
-    ) %>% mutate(scores = 1)
-  }
-  message(sprintf(">>> Points system: '%s'", lang))
-  return(scores)
 }
 
 
@@ -181,40 +188,27 @@ scrabble_points <- function(lang) {
 #' grepl_letters(x, "c")
 #' @export
 grepl_letters <- function(x, pattern, blank = "_") {
-  # When no black tile, use simple grepl function
-  if (!grepl(blank, pattern)) {
-    return(grepl(pattern, x, fixed = TRUE))
-  }
-
-  tiles_order <- strsplit(tolower(pattern), "")[[1]]
-  ntiles <- length(tiles_order)
-
-  words_tiles <- lapply(tolower(x), function(x) strsplit(x, "")[[1]])
-
-  lapply(words_tiles, function(x) {
-    nchars <- length(x)
-    # When less tiles than strings characters, skip
-    if (ntiles > nchars) {
-      return(FALSE)
-    }
-    possible_possitions <- nchars - ntiles + 1
-    combs <- data.frame(x = x)
-    for (i in 1:possible_possitions) {
-      vec <- rep(NA, nrow(combs))
-      vec[i:(i + ntiles - 1)] <- tiles_order
-      combs[, 1 + i] <- vec
-    }
-    combs <- replaceall(combs, "_", NA)
-    for (i in 2:ncol(combs)) {
-      temp <- select(combs, 1, i) %>% removenarows(all = FALSE)
-      if (all(temp[1] == temp[2])) {
-        return(TRUE)
+  # If no blank tile, use simple grepl
+  if (!grepl(blank, pattern, fixed = TRUE)) {
+    grepl(pattern, x, fixed = TRUE)
+  } else {
+    tiles <- strsplit(tolower(pattern), "")[[1]]
+    n_tiles <- length(tiles)
+    sapply(x, function(word) {
+      chars <- strsplit(tolower(word), "")[[1]]
+      n_chars <- length(chars)
+      if (n_tiles > n_chars) {
+        FALSE
+      } else {
+        possible_positions <- n_chars - n_tiles + 1
+        any(sapply(0:(possible_positions - 1), function(offset) {
+          slice <- chars[(1 + offset):(offset + n_tiles)]
+          all(tiles == blank | tiles == slice)
+        }))
       }
-    }
-    return(FALSE)
-  }) %>% unlist()
+    })
+  }
 }
-
 
 ####################################################################
 #' Scrabble: Highest score words finder
@@ -254,27 +248,29 @@ grepl_letters <- function(x, pattern, blank = "_") {
 #' @return data.frame with matching words found, sorted by higher points.
 #' @examples
 #' \donttest{
-#' # Automatic use of languages and scores
-#' Sys.setenv("LARES_LANG" = "es")
-#' scrabble_words(
-#'   tiles = "hola",
-#'   free = 2,
-#'   force_start = "h",
-#'   force_n = 4,
-#'   force_str = "_o_a",
-#'   exclude_here = "__z|j"
-#' )
+#' if (haveInternet()) {
+#'   # Automatic use of languages and scores
+#'   Sys.setenv("LARES_LANG" = "es")
+#'   scrabble_words(
+#'     tiles = "hola",
+#'     free = 2,
+#'     force_start = "h",
+#'     force_n = 4,
+#'     force_str = "_o_a",
+#'     exclude_here = "__z|j"
+#'   )
 #'
-#' wordle <- c("board", "tempo", "shoes", "hoard")
-#' scrabble_words(
-#'   language = NULL,
-#'   words = wordle,
-#'   force_n = 5,
-#'   force_str = "O_R"
-#' )
+#'   wordle <- c("board", "tempo", "shoes", "hoard")
+#'   scrabble_words(
+#'     language = NULL,
+#'     words = wordle,
+#'     force_n = 5,
+#'     force_str = "O_R"
+#'   )
 #'
-#' # Words considered for a language (you can custom it too!)
-#' es_words <- scrabble_dictionary("es")
+#'   # Words considered for a language (you can custom it too!)
+#'   es_words <- scrabble_dictionary("es")
+#' }
 #' }
 #' @export
 #' @rdname scrabble
@@ -398,9 +394,10 @@ scrabble_words <- function(tiles = "",
       done <- scrabble_score(words, scores.df)
     }
     if (sum(done$scores) == 0) done$scores <- NULL
-    return(as_tibble(done))
+    as_tibble(done)
   } else {
     message("No words found with set criteria")
+    NULL
   }
 }
 
@@ -425,7 +422,7 @@ scrabble_words <- function(tiles = "",
     words <- words[these]
   }
   if (rev) words <- .reverse(words)
-  return(words)
+  words
 }
 
 .reverse <- function(words) {
@@ -435,7 +432,7 @@ scrabble_words <- function(tiles = "",
   reversed <- lapply(splits, function(x) rev(x[[1]]))
   words <- unlist(lapply(reversed, function(x) paste(x, collapse = "")))
   class(words) <- original_class
-  return(words)
+  words
 }
 
 .add_letters <- function(str, tiles) {
@@ -454,7 +451,7 @@ scrabble_words <- function(tiles = "",
       ))
     }
   }
-  return(tiles)
+  tiles
 }
 
 # x <- "AB|CDE|F|GHIJK"

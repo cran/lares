@@ -11,7 +11,7 @@ h2o_selectmodel(results, which_model = 1, quiet = FALSE, ...)
 
 \item{which_model}{Integer. Which model from the leaderboard you wish to use?}
 
-\item{quiet}{Boolean. Quiet all messages, warnings, recommendations?}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 
 \item{...}{Additional parameters on \code{h2o::h2o.automl}}
 }
@@ -43,6 +43,7 @@ Other Tools:
 \code{\link{chr2num}()},
 \code{\link{db_download}()},
 \code{\link{db_upload}()},
+\code{\link{dont_sleep}()},
 \code{\link{export_plot}()},
 \code{\link{export_results}()},
 \code{\link{files_functions}()},

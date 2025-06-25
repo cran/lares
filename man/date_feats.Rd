@@ -36,7 +36,7 @@ be included?}
 \item{currency_pair}{Character. Which currency exchange do you
 wish to get the history from? i.e, USD/COP, EUR/USD...}
 
-\item{quiet}{Boolean. Quiet all messages?}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 }
 \value{
 data.frame with additional features calculated out of time or date vectors.
@@ -52,7 +52,7 @@ df <- data.frame(
 )
 
 # Input as a vector or dataframe
-date_feats(df, drop = TRUE) \%>\% head(10)
+date_feats(df, drop = TRUE, quiet = TRUE) \%>\% head(10)
 
 # Holidays given a date range and country
 \dontrun{

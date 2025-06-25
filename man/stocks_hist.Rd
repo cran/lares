@@ -40,7 +40,7 @@ case, taxes changed from A to B in given date (hard-coded)}
 
 \item{cache}{Boolean. Use daily cache if available?}
 
-\item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 
 \item{x}{stocks_hist object}
 
@@ -56,7 +56,7 @@ Daily Change, Market, and Symbol Name.
 \code{stocks_hist()} lets the user download stocks historical data.
 }
 \examples{
-\donttest{
+\dontrun{
 # Multiple quotes at the same time
 stocks_quote(c("VTI", "VOO", "TSLA"))
 }

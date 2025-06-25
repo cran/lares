@@ -5,9 +5,9 @@
 #'
 #' @family Time
 #' @family Tools
+#' @inheritParams get_mp3
 #' @param id Define ID if multiple \code{tic} & \code{toc} are being used.
 #' @param start Start time. Now is default.
-#' @param quiet Boolean. Quiet messages?
 #' @return Invisible list. Contains tic (start time), toc (stop time),
 #' elapsed time and message printed.
 #' @examples
@@ -90,5 +90,5 @@ toc <- function(id = 1, msg = "Elapsed time:", type = "units", signif = 3, quiet
   if (which[1] == "TOC") temp <- data.frame(TIC = aux[[id]]$TIC, TOC = start)
   aux[[id]] <- temp
   options("LARES_TICTOC" = aux)
-  return(aux[id])
+  aux[id]
 }

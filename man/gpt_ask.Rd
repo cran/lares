@@ -73,7 +73,7 @@ increase the temperature value.}
 \item{pause_base}{Numeric. The number of seconds to wait between retries.
 Default is 1.}
 
-\item{quiet}{Boolean. Keep quiet? If not, message will be shown.}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 
 \item{...}{Additional parameters.}
 
@@ -159,8 +159,6 @@ Other API:
 \code{\link{fb_rf}()},
 \code{\link{fb_token}()},
 \code{\link{gemini_ask}()},
-\code{\link{li_auth}()},
-\code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 

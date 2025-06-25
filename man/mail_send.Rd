@@ -34,7 +34,7 @@ plot as PNG or data.frame as CSV, respectively.}
 \item{creds}{Character. Credential's user (see \code{get_creds()}).
 Must contain: url (POST address), api (API key).}
 
-\item{quiet}{Boolean. Keep quite or display messages?}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 
 \item{...}{Additional parameters.}
 }
@@ -65,6 +65,7 @@ Other Tools:
 \code{\link{chr2num}()},
 \code{\link{db_download}()},
 \code{\link{db_upload}()},
+\code{\link{dont_sleep}()},
 \code{\link{export_plot}()},
 \code{\link{export_results}()},
 \code{\link{files_functions}()},

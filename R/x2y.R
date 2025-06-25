@@ -143,9 +143,10 @@ x2y <- function(df, target = NULL, symmetric = FALSE,
   attr(results, "symmetric") <- symmetric
   class(results) <- c("x2y", class(results))
   if (plot) {
-    return(plot(results))
+    plot(results)
+  } else {
+    results
   }
-  return(results)
 }
 
 .x2y_addcorr <- function(x2y, df) {
@@ -166,7 +167,7 @@ x2y <- function(df, target = NULL, symmetric = FALSE,
       mean_abs_corr = as.numeric(eval(.data$mean_abs_corr)),
       mean_pvalue = as.numeric(eval(.data$mean_pvalue))
     )
-  return(results)
+  results
 }
 
 
@@ -201,7 +202,7 @@ x2y_metric <- function(x, y, confidence = FALSE, bootstraps = 20, max_cat = 20) 
     attr(results, "bootstraps") <- bootstraps
   }
   class(results) <- c("x2y_metric", class(results))
-  return(results)
+  results
 }
 
 #' @rdname x2y
@@ -224,7 +225,7 @@ plot.x2y_preds <- function(x, corr = FALSE, ...) {
     p <- p + labs(caption = paste("Correlation:", signif(cor(x$x, x$y), 1))) +
       geom_smooth(aes(y = .data$y), method = "lm", formula = "y ~ x", size = 0.5)
   }
-  return(p)
+  p
 }
 
 #' @rdname x2y
@@ -292,7 +293,7 @@ plot.x2y <- function(x, type = 1, ...) {
         theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +
         coord_equal()
     }
-    return(p)
+    p
   }
 }
 
@@ -301,35 +302,37 @@ plot.x2y <- function(x, type = 1, ...) {
 x2y_preds <- function(x, y, max_cat = 10) {
   # If no variance
   if (length(unique(x)) == 1 || length(unique(y)) == 1) {
-    return(NA)
-  }
-  # If x is categorical
-  x <- .reduce_cats(x, max_cat)
-  # If y is continuous
-  if (is.numeric(y)) {
-    preds <- predict(rpart(y ~ x, method = "anova"), type = "vector")
+    NA
   } else {
-    # If y is categorical
-    y <- .reduce_cats(y, max_cat)
-    preds <- predict(rpart(y ~ x, method = "class"), type = "class")
+    # If x is categorical
+    x <- .reduce_cats(x, max_cat)
+    # If y is continuous
+    if (is.numeric(y)) {
+      preds <- predict(rpart(y ~ x, method = "anova"), type = "vector")
+    } else {
+      # If y is categorical
+      y <- .reduce_cats(y, max_cat)
+      preds <- predict(rpart(y ~ x, method = "class"), type = "class")
+    }
+    preds <- as_tibble(data.frame(x = x, y = y)) %>%
+      removenarows(all = FALSE) %>%
+      mutate(p = preds)
+    attr(preds, "max_cat") <- max_cat
+    class(preds) <- c("x2y_preds", class(preds))
+    preds
   }
-  preds <- as_tibble(data.frame(x = x, y = y)) %>%
-    removenarows(all = FALSE) %>%
-    mutate(p = preds)
-  attr(preds, "max_cat") <- max_cat
-  class(preds) <- c("x2y_preds", class(preds))
-  return(preds)
 }
 
 .x2y_vals <- function(x, y, ...) {
   if (length(unique(x)) == 1 || length(unique(y)) == 1) {
-    return(NA)
-  }
-  preds <- x2y_preds(x, y, ...)$p
-  if (is.numeric(y)) {
-    .mae_reduction(preds, y)
+    NA
   } else {
-    .misclass_reduction(preds, y)
+    preds <- x2y_preds(x, y, ...)$p
+    if (is.numeric(y)) {
+      .mae_reduction(preds, y)
+    } else {
+      .misclass_reduction(preds, y)
+    }
   }
 }
 
@@ -364,5 +367,5 @@ x2y_preds <- function(x, y, max_cat = 10) {
     top <- head(names(sort(table(x), decreasing = TRUE)), max_cat)
     x[!x %in% top] <- ""
   }
-  return(x)
+  x
 }

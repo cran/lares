@@ -11,6 +11,7 @@
 #'
 #' @family Clusters
 #' @inheritParams stats::kmeans
+#' @inheritParams get_mp3
 #' @param df Dataframe
 #' @param k Integer. Number of clusters
 #' @param wss_var Numeric. Used to pick automatic \code{k} value,
@@ -28,7 +29,6 @@
 #' @param comb Vector. Which columns do you wish to plot? Select which
 #' two variables by name or column position.
 #' @param seed Numeric. Seed for reproducibility
-#' @param quiet Boolean. Keep quiet? If not, print messages.
 #' @param ... Additional parameters to pass sub-functions.
 #' @return List. If no \code{k} is provided, contains \code{nclusters} and
 #' \code{nclusters_plot} to determine optimal \code{k} given their WSS (Within
@@ -188,8 +188,7 @@ clusterKmeans <- function(df, k = NULL, wss_var = 0, limit = 15, drop_na = TRUE,
       results[["tSNE"]] <- tsne
     }
   }
-
-  return(results)
+  results
 }
 
 
@@ -223,7 +222,7 @@ clusterVisualK <- function(df, ks = 2:6, ...) {
     pca <- clusters$PCA$pcadf %>%
       mutate(cluster = clusters$df$cluster, k = k)
     explained <<- clusters$PCA$pca_explained[1:2]
-    return(pca)
+    pca
   }
   clus_plot <- function(clus_dat, ...) {
     clus_dat %>%
@@ -250,7 +249,7 @@ clusterVisualK <- function(df, ks = 2:6, ...) {
     )
 
   ret <- list(plot = wrapped, data = dats)
-  return(invisible(ret))
+  invisible(ret)
 }
 
 ####################################################################
@@ -280,10 +279,9 @@ clusterOptimalK <- function(df, method = c("wss", "silhouette", "gap_stat"),
                             quiet = TRUE, ...) {
   try_require("factoextra")
   df <- .prepare_cluster(df, drop_na = drop_na, ohse = ohse, norm = norm, quiet = quiet)
-  plots <- lapply(method, function(x) {
+  lapply(method, function(x) {
     fviz_nbclust(df, kmeans, method = x, ...) + theme_lares(pal = 2, ...)
   })
-  return(plots)
 }
 
 .prepare_cluster <- function(df, drop_na = TRUE, ohse = TRUE,
@@ -341,7 +339,5 @@ clusterOptimalK <- function(df, method = c("wss", "silhouette", "gap_stat"),
       message(paste(">>> Removed duplicate obserations:", nrow(df) - nrow(new_df)))
     }
   }
-  df <- new_df
-
-  return(df)
+  new_df
 }

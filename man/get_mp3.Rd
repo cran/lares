@@ -7,7 +7,7 @@
 get_mp3(
   id,
   mp3 = TRUE,
-  repo = "youtube-dl",
+  repo = "yt-dlp",
   params = "--no-check-certificate",
   start_time = 0,
   end_time = NA,
@@ -42,7 +42,7 @@ file be opened? Should it be deleted?}
 
 \item{cover}{Boolean. Google Search its squared cover?}
 
-\item{quiet}{Boolean. Keep quiet? If not, print messages.}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 }
 \value{
 (Invisible) list with id's meta-data.

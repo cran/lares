@@ -119,10 +119,10 @@ corr <- function(df, method = "pearson",
         dimnames = list(names(output$cor), names(output$cor))
       )
     }
-    return(output)
+    output
+  } else {
+    cor
   }
-
-  return(cor)
 }
 
 
@@ -136,6 +136,7 @@ corr <- function(df, method = "pearson",
 #' @family Exploratory
 #' @family Correlations
 #' @inheritParams corr
+#' @inheritParams get_mp3
 #' @param var Variable. Name of the variable to correlate. Note that if the
 #' variable \code{var} is not numerical, 1. you may define which category to select
 #' from using `var_category`; 2. You may have to add \code{redundant = TRUE} to
@@ -156,7 +157,6 @@ corr <- function(df, method = "pearson",
 #' @param ranks Boolean. Add ranking numbers?
 #' @param zeroes Do you wish to keep zeroes in correlations too?
 #' @param save Boolean. Save output plot into working directory
-#' @param quiet Boolean. Keep quiet? If not, show messages
 #' @param ... Additional parameters passed to \code{corr} and \code{cor.test}
 #' @return data.frame. With variables, correlation and p-value results
 #' for each feature, arranged by descending absolute correlation value.
@@ -240,7 +240,12 @@ corr_var <- function(df, var,
       mutate(pvalue = as.numeric(ifelse(is.na(.data$pvalue), 1, .data$pvalue))) %>%
       filter(.data$pvalue <= max_pvalue)
   }
-  if (nrow(d) == 0) warning("Check your 'max_pvalue' input: might be too low!")
+  if (nrow(d) == 0) {
+    warning(sprintf(paste(
+      "Check your 'max_pvalue' input (%s):",
+      "might be too low given there are no correlations matching this criteria"
+    ), max_pvalue))
+  }
 
   # Limit automatically when more than 20 observations
   if (is.na(top) && nrow(d) > 20) {
@@ -271,10 +276,10 @@ corr_var <- function(df, var,
   class(d) <- c("corr_var", class(d))
 
   if (plot) {
-    p <- plot(d, var, max_pvalue = max_pvalue, top = top, limit = original_n)
-    return(p)
+    plot(d, var, max_pvalue = max_pvalue, top = top, limit = original_n)
+  } else {
+    d
   }
-  return(d)
 }
 
 #' @param x corr_var object
@@ -282,41 +287,46 @@ corr_var <- function(df, var,
 #' @export
 plot.corr_var <- function(x, var, max_pvalue = 1, top = NA, limit = NULL, ...) {
   pal <- lares_pal("labels")
-  p <- ungroup(x) %>%
-    filter(!.data$variables %in% c("pvalue", "pvalue_adj")) %>%
-    mutate(
-      pos = ifelse(.data$corr > 0, pal$fill[pal$values == "positive"],
-        pal$fill[pal$values == "negative"]
-      ),
-      hjust = ifelse(abs(.data$corr) < max(abs(.data$corr)) / 1.5, -0.1, 1.1)
-    ) %>%
-    ggplot(aes(
-      x = reorder(.data$variables, abs(.data$corr)),
-      y = abs(.data$corr), fill = .data$pos,
-      label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))
-    )) +
-    geom_hline(yintercept = 0, alpha = 0.5) +
-    geom_col(colour = "transparent") +
-    coord_flip() +
-    geom_text(aes(hjust = .data$hjust), size = 3, colour = "black") +
-    guides(fill = "none") +
-    labs(title = paste("Correlations of", var), x = NULL, y = NULL) +
-    scale_fill_identity() +
-    scale_y_continuous(
-      expand = c(0, 0), position = "right",
-      labels = function(x) sub("^(-)?0[.]", "\\1.", x)
-    ) +
-    theme_lares(...)
+  stopifnot(is.data.frame(x))
+  if (nrow(x) == 0) {
+    noPlot("No data available")
+  } else {
+    p <- ungroup(x) %>%
+      filter(!.data$variables %in% c("pvalue", "pvalue_adj")) %>%
+      mutate(
+        pos = ifelse(.data$corr > 0, pal$fill[pal$values == "positive"],
+          pal$fill[pal$values == "negative"]
+        ),
+        hjust = ifelse(abs(.data$corr) < max(abs(.data$corr)) / 1.5, -0.1, 1.1)
+      ) %>%
+      ggplot(aes(
+        x = reorder(.data$variables, abs(.data$corr)),
+        y = abs(.data$corr), fill = .data$pos,
+        label = sub("^(-)?0[.]", "\\1.", signif(.data$corr, 3))
+      )) +
+      geom_hline(yintercept = 0, alpha = 0.5) +
+      geom_col(colour = "transparent") +
+      coord_flip() +
+      geom_text(aes(hjust = .data$hjust), size = 3, colour = "black") +
+      guides(fill = "none") +
+      labs(title = paste("Correlations of", var), x = NULL, y = NULL) +
+      scale_fill_identity() +
+      scale_y_continuous(
+        expand = c(0, 0), position = "right",
+        labels = function(x) sub("^(-)?0[.]", "\\1.", x)
+      ) +
+      theme_lares(...)
 
-  if (is.null(limit)) limit <- 100
-  if (!is.na(top) && top < limit) {
-    p <- p + labs(subtitle = paste(top, "largest correlation variables (original & dummy)"))
-  }
+    if (is.null(limit)) limit <- 100
+    if (!is.na(top) && top < limit) {
+      p <- p + labs(subtitle = paste(top, "largest correlation variables (original & dummy)"))
+    }
 
-  if (max_pvalue < 1) {
-    p <- p + labs(caption = paste("Correlations with p-value <", max_pvalue))
+    if (max_pvalue < 1) {
+      p <- p + labs(caption = paste("Correlations with p-value <", max_pvalue))
+    }
+    p
   }
-  return(p)
 }
 
 
@@ -497,9 +507,10 @@ corr_cross <- function(df, plot = TRUE,
     if (max_pvalue < 1) {
       p <- p + labs(caption = paste("Correlations with p-value <", max_pvalue))
     }
-    return(p)
+    p
+  } else {
+    ret
   }
-  return(ret)
 }
 
 .transf <- function(x, max = 1, contains = NA, cluster = FALSE, rm.na = FALSE) {
@@ -530,7 +541,7 @@ corr_cross <- function(df, plot = TRUE,
     rename(corr = .data$value) %>%
     mutate(value = paste(.data$key, .data$mix)) %>%
     select(.data$key, .data$mix, .data$corr)
-  return(ret)
+  ret
 }
 
 
@@ -554,5 +565,5 @@ corr_cross <- function(df, plot = TRUE,
     }
   }
   colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
-  return(p.mat)
+  p.mat
 }

@@ -16,7 +16,6 @@
 #' Cash, and Transactions information. Please, keep the order of these tabs.
 #' @param keep_old Boolean. Include sold tickers even though not currently in portfolio?
 #' @param cache Boolean. Use daily cache if available?
-#' @param quiet Boolean. Keep quiet? If not, informative messages will be printed.
 #' @return List with portfolio, transactions, and cash data.frames.
 #' @examples
 #' \dontrun{
@@ -40,69 +39,69 @@ stocks_file <- function(file = NA,
                         ...) {
   cache_file <- c(as.character(Sys.Date()), "stocks_file")
   if (cache_exists(cache_file) && cache) {
-    results <- cache_read(cache_file, quiet = quiet)
-    return(results)
-  }
-  processFile <- function(file, sheets = NULL, keep_old = TRUE) {
-    mylist <- lapply(sheets, function(x) {
-      as_tibble(read.xlsx(
-        file,
-        sheet = x,
-        skipEmptyRows = TRUE,
-        detectDates = TRUE
-      ))
-    })
-    if (length(mylist) == 3) {
-      names(mylist) <- c("port", "cash", "trans")
-      mylist$port$StartDate <- try(as.Date(mylist$port$StartDate, origin = "1889-12-31", ...))
-      mylist$trans$Date <- try(as.Date(mylist$trans$Date, origin = "1889-12-31", ...))
-      mylist$cash$Date <- try(as.Date(mylist$cash$Date, origin = "1889-12-31", ...))
-      if ("Value" %in% colnames(mylist$trans)) {
-        mylist$trans <- rename(mylist$trans, Each = .data$Value, Invested = .data$Amount)
-      }
-      if (!keep_old) mylist$port <- try(mylist$port[mylist$port$Stocks != 0, ])
-      mylist <- list("portfolio" = mylist$port, "transactions" = mylist$trans, "cash" = mylist$cash)
-    }
-    if (length(mylist) == 1) {
-      mylist <- mylist[[1]]
-    }
-    return(mylist)
-  }
-
-  # FOR PERSONAL USE
-  local <- Sys.info()
-  if (auto && Sys.getenv("LARES_PORTFOLIO") != "") {
-    if (!quiet) message("Using BL's local file...")
-    local <- Sys.getenv("LARES_PORTFOLIO")
-    results <- processFile(local, sheets, keep_old)
+    cache_read(cache_file, quiet = quiet)
   } else {
-    # FOR EVERYONE'S USE
-    if (!is.na(file)) {
-      if (file.exists(file) || is_url(file)) {
-        results <- processFile(file, sheets, keep_old)
-      } else {
-        stop("Error: that file doesn't exist or it's not in your working directory!")
+    processFile <- function(file, sheets = NULL, keep_old = TRUE) {
+      mylist <- lapply(sheets, function(x) {
+        as_tibble(read.xlsx(
+          file,
+          sheet = x,
+          skipEmptyRows = TRUE,
+          detectDates = TRUE
+        ))
+      })
+      if (length(mylist) == 3) {
+        names(mylist) <- c("port", "cash", "trans")
+        mylist$port$StartDate <- try(as.Date(mylist$port$StartDate, origin = "1889-12-31", ...))
+        mylist$trans$Date <- try(as.Date(mylist$trans$Date, origin = "1889-12-31", ...))
+        mylist$cash$Date <- try(as.Date(mylist$cash$Date, origin = "1889-12-31", ...))
+        if ("Value" %in% colnames(mylist$trans)) {
+          mylist$trans <- rename(mylist$trans, Each = .data$Value, Invested = .data$Amount)
+        }
+        if (!keep_old) mylist$port <- try(mylist$port[mylist$port$Stocks != 0, ])
+        mylist <- list("portfolio" = mylist$port, "transactions" = mylist$trans, "cash" = mylist$cash)
       }
-    } else {
-      # FOR DROPBOX'S USE
-      file <- paste0(tempdir(), "/Portfolio LC.xlsx")
-      db_download(
-        query = "Portfolio LC.xlsx",
-        local_path = file,
-        xlsx = FALSE, # Do not import as Excel, just download
-        token_dir = creds
-      )
-      results <- processFile(file, sheets, keep_old = keep_old)
+      if (length(mylist) == 1) {
+        mylist <- mylist[[1]]
+      }
+      mylist
     }
+
+    # FOR PERSONAL USE
+    local <- Sys.info()
+    if (auto && Sys.getenv("LARES_PORTFOLIO") != "") {
+      if (!quiet) message("Using BL's local file...")
+      local <- Sys.getenv("LARES_PORTFOLIO")
+      results <- processFile(local, sheets, keep_old)
+    } else {
+      # FOR EVERYONE'S USE
+      if (!is.na(file)) {
+        if (file.exists(file) || is_url(file)) {
+          results <- processFile(file, sheets, keep_old)
+        } else {
+          stop("Error: that file doesn't exist or it's not in your working directory!")
+        }
+      } else {
+        # FOR DROPBOX'S USE
+        file <- paste0(tempdir(), "/Portfolio LC.xlsx")
+        db_download(
+          query = "Portfolio LC.xlsx",
+          local_path = file,
+          xlsx = FALSE, # Do not import as Excel, just download
+          token_dir = creds
+        )
+        results <- processFile(file, sheets, keep_old = keep_old)
+      }
+    }
+    if (length(results) == 3) {
+      attr(results$portfolio, "type") <- "stocks_file_portfolio"
+      attr(results$transactions, "type") <- "stocks_file_transactions"
+      attr(results$cash, "type") <- "stocks_file_cash"
+    }
+    attr(results, "type") <- "stocks_file"
+    cache_write(results, cache_file, quiet = TRUE, ...)
+    results
   }
-  if (length(results) == 3) {
-    attr(results$portfolio, "type") <- "stocks_file_portfolio"
-    attr(results$transactions, "type") <- "stocks_file_transactions"
-    attr(results$cash, "type") <- "stocks_file_cash"
-  }
-  attr(results, "type") <- "stocks_file"
-  cache_write(results, cache_file, quiet = TRUE, ...)
-  return(results)
 }
 
 ####################################################################
@@ -117,7 +116,7 @@ stocks_file <- function(file = NA,
 #' @return data.frame with Symbol, Type of stock, Quote time, current value,
 #' Daily Change, Market, and Symbol Name.
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Multiple quotes at the same time
 #' stocks_quote(c("VTI", "VOO", "TSLA"))
 #' }
@@ -129,7 +128,7 @@ stocks_quote <- function(symbols, ...) {
   for (i in seq_along(symbols)) {
     z <- try(data.frame(getQuote(symbols[i], ...)))
     if ("try-error" %in% class(z)) {
-      return(invisible(ret))
+      invisible(ret)
     }
     if (length(z) > 0) {
       z <- data.frame(Symbol = symbols[i], z)
@@ -189,108 +188,107 @@ stocks_hist <- function(symbols = c("VTI", "META"),
                         ...) {
   cache_file <- c(as.character(Sys.Date()), "stocks_hist")
   if (cache_exists(cache_file) && cache) {
-    results <- cache_read(cache_file, quiet = quiet)
-    return(results)
-  }
-
-  try_require("quantmod")
-  data <- divs <- NULL
-
-  if (!any(is.na(symbols))) {
-    if (length(from) != length(symbols)) {
-      from <- rep(from[1], length(symbols))
-    }
-    for (i in seq_along(symbols)) {
-      # Daily quotes (except today)
-      symbol <- as.character(symbols[i])
-      if (as.Date(from[i]) > (Sys.Date() - 4)) from[i] <- Sys.Date() - 4
-      start_date <- as.character(from[i])
-      values <- try(suppressWarnings(data.frame(getSymbols(
-        symbol,
-        env = NULL, from = start_date, to = to, src = "yahoo"
-      ))))
-      if ("try-error" %in% class(values)) next
-      values <- cbind(row.names(values), as.character(symbol), values)
-      colnames(values) <- c("Date", "Symbol", "Open", "High", "Low", "Close", "Volume", "Adjusted")
-      values <- mutate(values, Adjusted = rowMeans(select(values, .data$High, .data$Close), na.rm = TRUE))
-      row.names(values) <- NULL
-      # if (as.Date(from[i]) > (Sys.Date() - 4))
-      #   values <- head(values, 1)
-
-      # Add right now's data
-      if (today && to == Sys.Date()) {
-        now <- stocks_quote(symbol, ...)
-        # Append to historical data / replace most recent
-        if (length(now) > 0) {
-          now <- data.frame(
-            Date = as.character(as.Date(now$QuoteTime)),
-            Symbol = symbol,
-            Open = now$Value, High = now$Value,
-            Low = now$Value, Close = now$Value,
-            Volume = NA, Adjusted = now$Value
-          )
-          values <- filter(values, as.Date(.data$Date) != as.Date(now$Date))
-          values <- rbind(values, now)
-        }
-      }
-      # Append to other symbols' data
-      data <- rbind(data, values)
-
-      # Dividends (with Taxes deduction)
-      d <- suppressWarnings(getDividends(
-        as.character(symbol),
-        from = start_date, split.adjust = FALSE
-      ))
-      if (isTRUE(nrow(d) > 0)) {
-        div <- data.frame(
-          Symbol = rep(symbol, nrow(d)),
-          Date = ymd(row.names(data.frame(d))),
-          Div = as.vector(d),
-          DivTaxP = tax / 100
-        )
-        if (parg) {
-          div <- mutate(div, DivTaxP = ifelse(
-            .data$Date < as.Date("2020-03-03"),
-            (30 / 100), # Interactive Brokers (Colombia)
-            (15 / 100) # Schwab (Argentina/Veneezuela)
-          ))
-        }
-        div <- mutate(div,
-          DivReal = as.vector(d) * (1 - .data$DivTaxP),
-          Symbol = as.character(.data$Symbol)
-        )
-        divs <- rbind(divs, div)
-      }
-
-      if (!quiet && length(symbols) > 1) {
-        info <- paste(symbol, "since", start_date, "   ")
-        statusbar(i, length(symbols), info)
-      }
-    }
+    cache_read(cache_file, quiet = quiet)
   } else {
-    message("You need to define which stocks to bring. Use the 'symbols=' parameter.")
-  }
+    try_require("quantmod")
+    data <- divs <- NULL
 
-  results <- data %>%
-    select(.data$Date, .data$Symbol, .data$Close) %>%
-    rename(Value = .data$Close) %>%
-    filter(.data$Value > 0) %>%
-    mutate(
-      Date = as.Date(.data$Date),
-      Symbol = as.character(.data$Symbol)
-    )
-  if (length(divs) > 0) {
-    results <- left_join(results, divs, by = c("Date", "Symbol"))
-  }
-  results <- results %>%
-    replace(is.na(.), 0) %>%
-    arrange(desc(.data$Date))
+    if (!any(is.na(symbols))) {
+      if (length(from) != length(symbols)) {
+        from <- rep(from[1], length(symbols))
+      }
+      for (i in seq_along(symbols)) {
+        # Daily quotes (except today)
+        symbol <- as.character(symbols[i])
+        if (as.Date(from[i]) > (Sys.Date() - 4)) from[i] <- Sys.Date() - 4
+        start_date <- as.character(from[i])
+        values <- try(suppressWarnings(data.frame(getSymbols(
+          symbol,
+          env = NULL, from = start_date, to = to, src = "yahoo"
+        ))))
+        if ("try-error" %in% class(values)) next
+        values <- cbind(row.names(values), as.character(symbol), values)
+        colnames(values) <- c("Date", "Symbol", "Open", "High", "Low", "Close", "Volume", "Adjusted")
+        values <- mutate(values, Adjusted = rowMeans(select(values, .data$High, .data$Close), na.rm = TRUE))
+        row.names(values) <- NULL
+        # if (as.Date(from[i]) > (Sys.Date() - 4))
+        #   values <- head(values, 1)
 
-  results <- as_tibble(results)
-  attr(results, "type") <- "stocks_hist"
-  class(results) <- c("stocks_hist", class(results))
-  cache_write(results, cache_file, quiet = TRUE)
-  return(results)
+        # Add right now's data
+        if (today && to == Sys.Date()) {
+          now <- stocks_quote(symbol, ...)
+          # Append to historical data / replace most recent
+          if (length(now) > 0) {
+            now <- data.frame(
+              Date = as.character(as.Date(now$QuoteTime)),
+              Symbol = symbol,
+              Open = now$Value, High = now$Value,
+              Low = now$Value, Close = now$Value,
+              Volume = NA, Adjusted = now$Value
+            )
+            values <- filter(values, as.Date(.data$Date) != as.Date(now$Date))
+            values <- rbind(values, now)
+          }
+        }
+        # Append to other symbols' data
+        data <- rbind(data, values)
+
+        # Dividends (with Taxes deduction)
+        d <- suppressWarnings(getDividends(
+          as.character(symbol),
+          from = start_date, split.adjust = FALSE
+        ))
+        if (isTRUE(nrow(d) > 0)) {
+          div <- data.frame(
+            Symbol = rep(symbol, nrow(d)),
+            Date = ymd(row.names(data.frame(d))),
+            Div = as.vector(d),
+            DivTaxP = tax / 100
+          )
+          if (parg) {
+            div <- mutate(div, DivTaxP = ifelse(
+              .data$Date < as.Date("2020-03-03"),
+              (30 / 100), # Interactive Brokers (Colombia)
+              (15 / 100) # Schwab (Argentina/Veneezuela)
+            ))
+          }
+          div <- mutate(div,
+            DivReal = as.vector(d) * (1 - .data$DivTaxP),
+            Symbol = as.character(.data$Symbol)
+          )
+          divs <- rbind(divs, div)
+        }
+
+        if (!quiet && length(symbols) > 1) {
+          info <- paste(symbol, "since", start_date, "   ")
+          statusbar(i, length(symbols), info)
+        }
+      }
+    } else {
+      message("You need to define which stocks to bring. Use the 'symbols=' parameter.")
+    }
+
+    results <- data %>%
+      select(.data$Date, .data$Symbol, .data$Close) %>%
+      rename(Value = .data$Close) %>%
+      filter(.data$Value > 0) %>%
+      mutate(
+        Date = as.Date(.data$Date),
+        Symbol = as.character(.data$Symbol)
+      )
+    if (length(divs) > 0) {
+      results <- left_join(results, divs, by = c("Date", "Symbol"))
+    }
+    results <- results %>%
+      replace(is.na(.), 0) %>%
+      arrange(desc(.data$Date))
+
+    results <- as_tibble(results)
+    attr(results, "type") <- "stocks_hist"
+    class(results) <- c("stocks_hist", class(results))
+    cache_write(results, cache_file, quiet = TRUE)
+    results
+  }
 }
 
 #' @rdname stocks_hist
@@ -413,7 +411,7 @@ daily_stocks <- function(hist, trans, tickers = NA, window = "MAX", ...) {
     ungroup()
 
   attr(daily, "type") <- "daily_stocks"
-  return(daily)
+  daily
 }
 
 ####################################################################
@@ -496,7 +494,7 @@ daily_portfolio <- function(hist, trans, cash, cash_fix = 0, window = "MAX") {
     ungroup()
 
   attr(ret, "type") <- "daily_portfolio"
-  return(ret)
+  ret
 }
 
 
@@ -563,12 +561,12 @@ weighted_value <- function(value,
     ret <- sum(df$value * df$total, na.rm = TRUE) / sum(df$total, na.rm = TRUE)
     attr(ret, "df") <- select(df, -any_of(c("id", "cum")))
     if (type == 2) {
-      return(attr(ret, "df"))
+      attr(ret, "df")
     } else {
-      return(ret)
+      ret
     }
   } else {
-    return(0)
+    0
   }
 }
 
@@ -682,7 +680,7 @@ splot_summary <- function(p, s, save = FALSE) {
       ggsave("portf_stocks_change.png", width = 8, height = 8, dpi = 300)
   }
 
-  return(plot)
+  plot
 }
 
 
@@ -796,7 +794,7 @@ splot_change <- function(p, s,
     plot <- plot +
       ggsave("portf_stocks_histchange.png", width = 8, height = 5, dpi = 300)
   }
-  return(plot)
+  plot
 }
 
 
@@ -881,7 +879,7 @@ splot_growth <- function(p, save = FALSE) {
     plot <- plot +
       ggsave("portf_total_hist.png", width = 8, height = 5, dpi = 300)
   }
-  return(plot)
+  plot
 }
 
 
@@ -1033,7 +1031,7 @@ splot_roi <- function(p, n_days = 365, historical = TRUE, ma = c(12, 50), save =
       }
   }
 
-  return(plot)
+  plot
 }
 
 
@@ -1066,7 +1064,7 @@ splot_types <- function(s, save = FALSE) {
     plot <- plot +
       ggsave("portf_distribution.png", width = 8, height = 5, dpi = 300)
   }
-  return(plot)
+  plot
 }
 
 
@@ -1091,54 +1089,53 @@ etf_sector <- function(etf = "VTI", quiet = FALSE, cache = TRUE) {
   }
   cache_file <- c(as.character(Sys.Date()), "etf_sector", etf)
   if (cache_exists(cache_file) && cache) {
-    results <- cache_read(cache_file, quiet = quiet)
-    return(results)
-  }
-
-  if (!quiet) message(">>> Downloading sectors for each ETF...")
-  ret <- data.frame()
-  nodata <- NULL
-  for (i in seq_along(etf)) {
-    info <- toupper(etf[i])
-    url <- sprintf("https://etfdb.com/etf/%s/", info)
-    # exists <- tryCatch({!httr::http_error(url)}, error = function(err) {FALSE})
-    sector <- tryCatch(
-      suppressWarnings(content(GET(url))),
-      error = function(err) {
-        closeAllConnections()
-        gc()
-        nodata <- c(nodata, info)
-        return(NULL)
-      }
-    )
-    if (is.null(sector)) next
-    tables <- sector %>% html_table()
-    sector_table <- lapply(tables, function(x) {
-      "Sector" %in% colnames(x)
-    }) %>% unlist()
-    if (sum(sector_table) > 0) {
-      sec <- tables[sector_table][[1]] %>%
-        mutate(ETF = info) %>%
-        mutate(Percentage = as.numeric(gsub("%", "", .data$Percentage)))
-      ret <- rbind(ret, sec)
-    } else {
-      nodata <- c(nodata, info)
-    }
-    if (!quiet && length(etf) > 1) {
-      statusbar(i, length(etf), info)
-    }
-  }
-
-  attr(ret, "type") <- "etf_sector"
-  if (length(unique(nodata)) > 0) {
-    if (!quiet) message("Some ticks were not found as ETF: ", v2t(unique(nodata)))
-  }
-  if (nrow(ret) == 0) {
-    if (!quiet) message("No data found for given Tickers!")
-    invisible(return(NULL))
+    cache_read(cache_file, quiet = quiet)
   } else {
-    cache_write(ret, cache_file, quiet = TRUE)
-    return(ret)
+    if (!quiet) message(">>> Downloading sectors for each ETF...")
+    ret <- data.frame()
+    nodata <- NULL
+    for (i in seq_along(etf)) {
+      info <- toupper(etf[i])
+      url <- sprintf("https://etfdb.com/etf/%s/", info)
+      # exists <- tryCatch({!httr::http_error(url)}, error = function(err) {FALSE})
+      sector <- tryCatch(
+        suppressWarnings(content(GET(url))),
+        error = function(err) {
+          closeAllConnections()
+          gc()
+          nodata <- c(nodata, info)
+          NULL
+        }
+      )
+      if (is.null(sector)) next
+      tables <- sector %>% html_table()
+      sector_table <- lapply(tables, function(x) {
+        "Sector" %in% colnames(x)
+      }) %>% unlist()
+      if (sum(sector_table) > 0) {
+        sec <- tables[sector_table][[1]] %>%
+          mutate(ETF = info) %>%
+          mutate(Percentage = as.numeric(gsub("%", "", .data$Percentage)))
+        ret <- rbind(ret, sec)
+      } else {
+        nodata <- c(nodata, info)
+      }
+      if (!quiet && length(etf) > 1) {
+        statusbar(i, length(etf), info)
+      }
+    }
+
+    attr(ret, "type") <- "etf_sector"
+    if (length(unique(nodata)) > 0) {
+      if (!quiet) message("Some ticks were not found as ETF: ", v2t(unique(nodata)))
+    }
+    if (nrow(ret) == 0) {
+      if (!quiet) message("No data found for given Tickers!")
+      invisible(NULL)
+    } else {
+      cache_write(ret, cache_file, quiet = TRUE)
+      ret
+    }
   }
 }
 
@@ -1211,9 +1208,9 @@ splot_etf <- function(s, keep_all = FALSE, cache = TRUE, save = FALSE) {
       plot <- plot +
         ggsave("portf_distribution_etfs.png", width = 8, height = 5, dpi = 300)
     }
-    return(plot)
+    plot
   } else {
-    return(noPlot("No data here!"))
+    noPlot("No data here!")
   }
 }
 
@@ -1293,7 +1290,7 @@ stocks_obj <- function(data = stocks_file(),
   ret[["plots_relative"]] <- plots_relative
 
   attr(ret, "type") <- "stocks_obj"
-  return(ret)
+  ret
 }
 # x <- stocks_obj(window = c("1M","1Y","YTD"))
 
@@ -1433,7 +1430,7 @@ stocks_report <- function(data = NA,
   }
 
   toc("stocks_report")
-  return(invisible(data))
+  invisible(data)
 }
 
 .filter_window <- function(df, window) {

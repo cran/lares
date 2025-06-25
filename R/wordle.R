@@ -29,9 +29,14 @@
 #' @export
 #' @rdname wordle
 wordle_check <- function(input, word, dictionary = NULL, lang_dic = "en", method = 3, print = TRUE) {
-  wordle_valid(input, dictionary, lang_dic, method)
-  out <- pos_check(input, word, len = 5, print = print)
-  return(invisible(out))
+  if (!haveInternet()) {
+    message("No internet connetion...")
+    invisible(NULL)
+  } else {
+    wordle_valid(input, dictionary, lang_dic, method)
+    out <- pos_check(input, word, len = 5, print = print)
+    invisible(out)
+  }
 }
 
 pos_check <- function(input, solution, len = 5, print = TRUE) {
@@ -45,7 +50,7 @@ pos_check <- function(input, solution, len = 5, print = TRUE) {
   names(out) <- in_tiles
   class(out) <- c("wordle_check", class(out))
   print(out, print = print)
-  return(out)
+  out
 }
 
 #' @rdname wordle
@@ -57,7 +62,7 @@ print.wordle_check <- function(x, print = TRUE, ...) {
     texts <- c(texts, formatColoured(names(x)[i], x[i], bold = TRUE, cat = FALSE))
   }
   txt <- paste(texts, collapse = " ")
-  if (print) cat(txt) else return(txt)
+  if (print) cat(txt) else txt
 }
 
 wordle_valid <- function(input, dictionary, lang_dic = "en", method = 3) {
@@ -74,31 +79,33 @@ wordle_valid <- function(input, dictionary, lang_dic = "en", method = 3) {
 #' @rdname wordle
 wordle_dictionary <- function(lang_dic = "en", method = 3, quiet = TRUE) {
   if (is.null(lang_dic)) {
-    return(NULL)
-  }
-  check_opts(lang_dic, c("en", "es"))
-  cache_name <- c(lang_dic, method)
-  if (cache_exists(cache_name)) {
-    words <- cache_read(cache_name, quiet = quiet)
-    if (!quiet) {
-      message(sprintf(
-        ">>> Loaded %s '%s' words",
-        formatNum(length(words), 0), lang_dic
-      ))
+    NULL
+  } else {
+    check_opts(lang_dic, c("en", "es"))
+    cache_name <- c(lang_dic, method)
+    if (cache_exists(cache_name)) {
+      words <- cache_read(cache_name, quiet = quiet)
+      if (!quiet) {
+        message(sprintf(
+          ">>> Loaded %s '%s' words",
+          formatNum(length(words), 0), lang_dic
+        ))
+      }
+      words
+    } else {
+      if (method == 1) {
+        words <- scrabble_dictionary(lang_dic, quiet)[[1]]
+      }
+      if (method == 3) {
+        url <- "https://raw.githubusercontent.com/tabatkins/wordle-list/main/words"
+        words <- readLines(url, warn = FALSE)
+      }
+      out <- toupper(words[nchar(words) == 5])
+      cache_write(out, cache_name, quiet = quiet)
+      if (!quiet) message(sprintf(">>> Saved (%s words) into cache", formatNum(length(out), 0)))
+      out
     }
-    return(words)
   }
-  if (method == 1) {
-    words <- scrabble_dictionary(lang_dic, quiet)[[1]]
-  }
-  if (method == 3) {
-    url <- "https://raw.githubusercontent.com/tabatkins/wordle-list/main/words"
-    words <- readLines(url, warn = FALSE)
-  }
-  out <- toupper(words[nchar(words) == 5])
-  cache_write(out, cache_name, quiet = quiet)
-  if (!quiet) message(sprintf(">>> Saved (%s words) into cache", formatNum(length(out), 0)))
-  return(out)
 }
 
 #' @inheritParams cache_write
@@ -107,50 +114,55 @@ wordle_dictionary <- function(lang_dic = "en", method = 3, quiet = TRUE) {
 #' run as many seeds there are.
 #' @export
 #' @examples
-#'
+#' \donttest{
 #' x <- wordle_simulation(input = "SAINT", word = "ABBEY", seed = 1:3)
 #' print(x)
-#' # hist(sapply(x, function(x) x$iters))
+#' }
 #' @rdname wordle
 wordle_simulation <- function(input, word, seed = NULL, quiet = FALSE, ...) {
-  tic("wordle_simulation")
-  output <- NULL
-  if (is.null(seed)) seed <- sample(1:100, 1)
-  # First iteration with picked word (no random stuff happens here)
-  iter_first <- wordle_opts(input, word, quiet = quiet, ...)
-  for (s in seed) {
-    # Print first word for nicer and more informative output
-    if (s != seed[1]) {
-      wordle_check(input, word, ...)
-      if (!isFALSE(list(...)[["print"]])) cat("\n")
-    }
-    set.seed(s) # s = seed[1]
-    seed_loop <- NULL
-    i <- 1
-    used_words <- input
-    iter <- iter_first
-    # Second iteration onwards
-    while (length(iter) > 1) {
-      random_word <- sample(iter, 1)
-      used_words <- c(used_words, random_word)
-      iter <- wordle_opts(random_word, word, iter, quiet = quiet, ...)
-      # If random word picked is the word
-      if (random_word == word) break
-      # If last word remaining is the one
-      if (length(iter) == 1 && all(iter == word)) {
-        iter <- wordle_opts(word, word, iter, quiet = quiet, ...)
+  if (!haveInternet()) {
+    message("No internet connetion...")
+    invisible(NULL)
+  } else {
+    tic("wordle_simulation")
+    output <- NULL
+    if (is.null(seed)) seed <- sample(1:100, 1)
+    # First iteration with picked word (no random stuff happens here)
+    iter_first <- wordle_opts(input, word, quiet = quiet, ...)
+    for (s in seed) {
+      # Print first word for nicer and more informative output
+      if (s != seed[1]) {
+        wordle_check(input, word, ...)
+        if (!isFALSE(list(...)[["print"]])) cat("\n")
       }
-      i <- i + 1
+      set.seed(s) # s = seed[1]
+      seed_loop <- NULL
+      i <- 1
+      used_words <- input
+      iter <- iter_first
+      # Second iteration onwards
+      while (length(iter) > 1) {
+        random_word <- sample(iter, 1)
+        used_words <- c(used_words, random_word)
+        iter <- wordle_opts(random_word, word, iter, quiet = quiet, ...)
+        # If random word picked is the word
+        if (random_word == word) break
+        # If last word remaining is the one
+        if (length(iter) == 1 && all(iter == word)) {
+          iter <- wordle_opts(word, word, iter, quiet = quiet, ...)
+        }
+        i <- i + 1
+      }
+      output[[paste0("seed_", s)]] <- list(words = used_words, iters = sum(used_words != word) + 1)
+      if (!quiet) message(sprintf(">> Iterations (seed = %s): %s\n", s, i + 1))
     }
-    output[[paste0("seed_", s)]] <- list(words = used_words, iters = sum(used_words != word) + 1)
-    if (!quiet) message(sprintf(">> Iterations (seed = %s): %s\n", s, i + 1))
+    attr(output, "input") <- input
+    attr(output, "word") <- word
+    attr(output, "iterations") <- length(seed)
+    attr(output, "elapsed") <- toc("wordle_simulation", quiet = quiet)$time
+    class(output) <- c("wordle_simulation", class(output))
+    invisible(output)
   }
-  attr(output, "input") <- input
-  attr(output, "word") <- word
-  attr(output, "iterations") <- length(seed)
-  attr(output, "elapsed") <- toc("wordle_simulation", quiet = quiet)$time
-  class(output) <- c("wordle_simulation", class(output))
-  return(invisible(output))
 }
 
 #' @rdname wordle
@@ -213,8 +225,7 @@ wordle_opts <- function(input, word, dictionary = NULL, lang_dic = "en", method 
   }
   attr(dictionary, "answer") <- word
   attr(dictionary, "last_word") <- input
-
-  return(dictionary)
+  dictionary
 }
 
 discard_words <- function(input, word, dictionary, check) {
@@ -251,7 +262,7 @@ discard_words <- function(input, word, dictionary, check) {
   } else {
     dictionary <- word
   }
-  return(dictionary)
+  dictionary
 }
 
 ############ PLAY AREA ############

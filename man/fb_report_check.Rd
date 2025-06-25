@@ -27,7 +27,7 @@ to acquire one.}
 \item{sleep}{Boolean. If \code{live=TRUE}, then how many seconds should
 we wait until next check?}
 
-\item{quiet}{Boolean. Quiet messages?}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 }
 \value{
 List with API status results.
@@ -57,8 +57,6 @@ Other API:
 \code{\link{fb_token}()},
 \code{\link{gemini_ask}()},
 \code{\link{gpt_ask}()},
-\code{\link{li_auth}()},
-\code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 

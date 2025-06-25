@@ -31,7 +31,6 @@
 #' @param other_label Character. With which text do you wish to replace
 #' the filtered values with?
 #' @param sep Character. Separator's string
-#' @param quiet Boolean. Quiet all messages and summaries?
 #' @return data.frame on which all features are numerical by nature or
 #' transformed with one hot encoding.
 #' @examples
@@ -192,8 +191,7 @@ ohse <- function(df,
   # Bind ignored untouched columns and order
   order <- order[order %in% colnames(df)]
   df <- bind_cols(df, ignored) %>% select(any_of(order), everything())
-
-  return(as_tibble(df))
+  as_tibble(df)
 }
 
 
@@ -247,7 +245,7 @@ ohe_commas <- function(df, ..., sep = ",", noval = "NoVal", remove = FALSE) {
     df <- cbind(df, mat)
   }
   if (remove) df <- df[, !colnames(df) %in% var]
-  return(as_tibble(df, .name_repair = "minimal"))
+  as_tibble(df, .name_repair = "minimal")
 }
 
 
@@ -260,6 +258,7 @@ ohe_commas <- function(df, ..., sep = ",", noval = "NoVal", remove = FALSE) {
 #' @family Data Wrangling
 #' @family Feature Engineering
 #' @family One Hot Encoding
+#' @inheritParams get_mp3
 #' @param dates Vector or dataframe. Non-date/time columns will be
 #' automatically ignored/extracted.
 #' @param drop Boolean. Should the original date/time columns be
@@ -273,7 +272,6 @@ ohe_commas <- function(df, ..., sep = ",", noval = "NoVal", remove = FALSE) {
 #' be included?
 #' @param currency_pair Character. Which currency exchange do you
 #' wish to get the history from? i.e, USD/COP, EUR/USD...
-#' @param quiet Boolean. Quiet all messages?
 #' @return data.frame with additional features calculated out of time or date vectors.
 #' @examples
 #' df <- data.frame(
@@ -282,7 +280,7 @@ ohe_commas <- function(df, ..., sep = ",", noval = "NoVal", remove = FALSE) {
 #' )
 #'
 #' # Input as a vector or dataframe
-#' date_feats(df, drop = TRUE) %>% head(10)
+#' date_feats(df, drop = TRUE, quiet = TRUE) %>% head(10)
 #'
 #' # Holidays given a date range and country
 #' \dontrun{
@@ -308,98 +306,103 @@ date_feats <- function(dates,
   vector <- is.null(dim(dates))
 
   if (length(date_cols) == 0) {
-    return(dates)
-  }
-
-  if (!is.na(only)) {
-    date_cols <- date_cols[date_cols %in% only]
-  }
-
-  iters <- ifelse(date_cols == "df", 1, length(date_cols))[1]
-  if (!is.na(iters)) {
-    if (!quiet) {
-      message(paste(">>> Processing", iters, "date/time columns:", vector2text(date_cols)))
-    }
+    dates
   } else {
-    return(dates)
-  }
-
-  if (!"data.frame" %in% class(dates) && iters == 1) {
-    dates <- data.frame(values_date = dates)
-    date_cols <- "values_date"
-  }
-
-  if (holidays || !is.na(currency_pair)) {
-    search_dates <- dates[, c(colnames(dates) %in% date_cols)]
-    search_dates[] <- unlist(lapply(search_dates, function(x) gsub(" .*", "", as.character(x))))
-    alldates <- as.Date(unlist(search_dates, use.names = FALSE))
-    alldates <- alldates[!is.na(alldates)]
-  }
-
-  if (holidays) {
-    years <- sort(unique(year(alldates)))
-    holidays_dates <- holidays(countries = country, years)
-    colnames(holidays_dates)[1] <- "values_date"
-    holidays_dates$values_date <- as.character(as.Date(holidays_dates$values_date))
-    cols <- paste0("values_date_holiday_", colnames(holidays_dates)[4:ncol(holidays_dates)])
-    colnames(holidays_dates)[-(1:3)] <- cols
-  }
-
-  # Features creator
-  for (col in 1:iters) {
-    col_name <- date_cols[col]
-    result <- dates %>% select(!!as.name(col_name))
-    values <- result[, 1]
-    result$values_date <- as.character(as.Date(values))
-
-    result$values_date_year <- year(values)
-    result$values_date_month <- month(values)
-    result$values_date_day <- day(values)
-    result$values_date_week <- week(values)
-    result$values_date_weekday <- weekdays(values, abbreviate = TRUE)
-    result$values_date_weekend <- format(values, "%u") %in% c(6, 7)
-    result$values_date_year_day <- as.integer(difftime(
-      values, floor_date(values, unit = "year"),
-      units = "day"
-    ))
-
-    if (any(grepl(class(values), "POSIX"))) {
-      result$values_date_hour <- hour(values)
-      result$values_date_minute <- minute(values)
-      result$values_date_minutes <- as.integer(difftime(
-        values, floor_date(values, unit = "day"),
-        units = "mins"
-      ))
-      result$values_date_second <- second(values)
+    if (!is.na(only)) {
+      date_cols <- date_cols[date_cols %in% only]
     }
 
-    # Holidays data
-    if (holidays) {
-      result <- result %>%
-        left_join(holidays_dates, by = "values_date", relationship = "many-to-many") %>%
-        mutate(values_date_holiday_county = as.character(.data$values_date_holiday_county)) %>%
-        mutate_at(vars(cols), list(~ replace(., which(is.na(.)), FALSE)))
-    }
+    iters <- ifelse(date_cols == "df", 1, length(date_cols))[1]
 
-    # Currencies data
-    if (!is.na(currency_pair)) {
-      currency <- get_currency(currency_pair, from = min(alldates), to = max(alldates))
-      colnames(currency) <- c("values_date", paste0("values_date_", tolower(cleanText(currency_pair))))
-      currency[, 1] <- as.character(currency[, 1])
-      result <- result %>% left_join(currency, by = "values_date")
-    }
+    if (is.na(iters)) {
+      dates
+    } else {
+      if (!quiet) message(paste(">>> Processing", iters, "date/time columns:", vector2text(date_cols)))
 
-    col_name <- ifelse(col_name == "values_date", "", paste0(col_name, "_"))
-    colnames(result)[-1] <- gsub("values_date_", col_name, colnames(result)[-1])
-    results <- results %>%
-      bind_cols(result) %>%
-      select(-contains("values_date"))
-    if (vector) colnames(results)[1] <- "values"
+      if (!"data.frame" %in% class(dates) && iters == 1) {
+        dates <- data.frame(values_date = dates)
+        date_cols <- "values_date"
+      }
+
+      alldates <- NULL
+      if (holidays || !is.na(currency_pair)) {
+        search_dates <- dates[, date_cols, drop = FALSE]
+        search_dates[] <- lapply(search_dates, function(x) gsub(" .*", "", as.character(x)))
+        alldates <- as.Date(unlist(search_dates, use.names = FALSE))
+        alldates <- alldates[!is.na(alldates)]
+      }
+
+      holidays_dates <- NULL
+      if (holidays && length(alldates) > 0) {
+        years <- sort(unique(year(alldates)))
+        holidays_dates <- holidays(countries = country, years)
+        colnames(holidays_dates)[1] <- "values_date"
+        holidays_dates$values_date <- as.character(as.Date(holidays_dates$values_date))
+        cols <- paste0("values_date_holiday_", colnames(holidays_dates)[4:ncol(holidays_dates)])
+        colnames(holidays_dates)[-(1:3)] <- cols
+      }
+
+      for (col in date_cols) {
+        result <- dates %>% select(!!sym(col))
+        values <- result[[1]]
+        result$values_date <- as.character(as.Date(values))
+
+        result$values_date_year <- year(values)
+        result$values_date_month <- month(values)
+        result$values_date_day <- day(values)
+        result$values_date_week <- week(values)
+        result$values_date_weekday <- weekdays(values, abbreviate = TRUE)
+        result$values_date_weekend <- format(values, "%u") %in% c("6", "7")
+        result$values_date_year_day <- as.integer(difftime(
+          values, floor_date(values, unit = "year"),
+          units = "day"
+        ))
+
+        if (any(grepl("POSIX", class(values)))) {
+          result$values_date_hour <- hour(values)
+          result$values_date_minute <- minute(values)
+          result$values_date_minutes <- as.integer(difftime(
+            values, floor_date(values, unit = "day"),
+            units = "mins"
+          ))
+          result$values_date_second <- second(values)
+        }
+
+        if (!is.null(holidays_dates)) {
+          result <- result %>%
+            left_join(holidays_dates, by = "values_date", relationship = "many-to-many") %>%
+            mutate(values_date_holiday_county = as.character(.data$values_date_holiday_county)) %>%
+            mutate(across(starts_with("values_date_holiday_"), ~ replace(., is.na(.), FALSE)))
+        }
+
+        if (!is.na(currency_pair) && length(alldates) > 0) {
+          currency <- get_currency(currency_pair, from = min(alldates), to = max(alldates))
+          colnames(currency) <- c("values_date", paste0("values_date_", tolower(cleanText(currency_pair))))
+          currency[[1]] <- as.character(currency[[1]])
+          result <- result %>% left_join(currency, by = "values_date")
+        }
+
+        prefix <- if (col == "values_date") "" else paste0(col, "_")
+        colnames(result)[-1] <- gsub("^values_date_", prefix, colnames(result)[-1])
+
+        results <- results %>%
+          bind_cols(result) %>%
+          select(-contains("values_date"))
+
+        if (vector) colnames(results)[1] <- "values"
+      }
+
+      if (append) {
+        results <- bind_cols(original, select(results, -any_of(colnames(original))))
+      }
+
+      if (drop) {
+        results <- results[, !colnames(results) %in% date_cols, drop = FALSE]
+      }
+
+      as_tibble(results)
+    }
   }
-
-  if (append) results <- bind_cols(original, select(results, -any_of(colnames(original))))
-  if (drop) results <- results[, !colnames(results) %in% date_cols]
-  return(as_tibble(results))
 }
 
 
@@ -413,11 +416,11 @@ date_feats <- function(dates,
 #' @family Feature Engineering
 #' @family Scrapper
 #' @family One Hot Encoding
+#' @inheritParams get_mp3
 #' @param years Character or vector. For which year(s) do you wish to import
 #' holiday dates?
 #' @param countries Character or vector. For which country(ies) should the
 #' holidays be imported?
-#' @param quiet Boolean. Default FALSE which disables verbosity of the function.
 #' @param include_regions Boolean. Default FALSE. If TRUE, for countries with
 #' internal subdivisions, it will provide details on which sub-state the found
 #' holidays apply.
@@ -434,93 +437,98 @@ holidays <- function(countries = "Venezuela",
                      years = year(Sys.Date()),
                      quiet = FALSE,
                      include_regions = FALSE) {
-  # Further improvement: let the user bring more than +-5 years
-  results <- NULL
-  if (any(!years %in% (year(Sys.Date()) - 5):(year(Sys.Date()) + 5))) {
-    warning(paste(
-      "Only allowing \u00b1 5 years from today. Check:", v2t(years)
-    ))
-  }
-  year <- year(Sys.Date())
-  years <- years[years %in% ((year - 5L):(year + 5L))]
-  combs <- expand.grid(years, countries) %>%
-    dplyr::rename(year = "Var1", country = "Var2")
-
-  for (i in seq_len(nrow(combs))) {
-    if (!quiet) {
-      message(paste0(">>> Extracting ", combs$country[i], "'s holidays for ", combs$year[i]))
+  if (!haveInternet()) {
+    message("No internet connetion...")
+    invisible(NULL)
+  } else {
+    # Further improvement: let the user bring more than +-5 years
+    results <- NULL
+    if (any(!years %in% (year(Sys.Date()) - 5):(year(Sys.Date()) + 5))) {
+      warning(paste(
+        "Only allowing \u00b1 5 years from today. Check:", v2t(years)
+      ))
     }
-    url <- paste0("https://www.timeanddate.com/holidays/", tolower(combs$country[i]), "/", combs$year[i])
-    # call httr's GET however set header to only accept English named date parts (months)
-    # otherwise if user uses own locale, for instance German, an error can occur parsing dates of holidays
-    # compare with plain call without additional headers in different locale: holidays <- content(GET(url))
-    ret <- try(content(GET(url, add_headers("Accept-Language" = "en"))))
-    if ("xml_document" %in% class(ret)) {
-      holidays <- ret %>%
-        html_nodes(".table") %>%
-        html_table(fill = TRUE) %>%
-        data.frame(.) %>%
-        filter(!is.na(.data$Date)) %>%
-        select(-2L) %>%
-        mutate(Date = paste(.data$Date, combs$year[i])) %>%
-        .[-1L, ] %>%
-        removenacols(all = TRUE) %>%
-        removenarows(all = TRUE)
-      colnames(holidays) <- if (include_regions & ncol(holidays) > 3) {
-        c("Date", "Holiday", "Holiday.Type", "Holiday.Details")
-      } else {
-        c("Date", "Holiday", "Holiday.Type")
-      }
+    year <- year(Sys.Date())
+    years <- years[years %in% ((year - 5L):(year + 5L))]
+    combs <- expand.grid(years, countries) %>%
+      dplyr::rename(year = "Var1", country = "Var2")
 
-      # the table might contain comment about interstate holidays like
-      # '* Observed only in some communities of this state.
-      # Hover your mouse over the region or click on the holiday for details.'
-      # this will not parse as Date but create a warning, hence handling it here
-      grep_comment <- grep("*", holidays$Date, fixed = TRUE)
-      if (length(grep_comment) != 0L) {
-        holidays <- holidays[-grep_comment, ]
+    for (i in seq_len(nrow(combs))) {
+      if (!quiet) {
+        message(paste0(">>> Extracting ", combs$country[i], "'s holidays for ", combs$year[i]))
       }
-      holidays$Date <- tryCatch(
-        {
-          lubridate::dmy(holidays$Date)
-        },
-        error = function(cond) {
-          stop(
-            "Unaccounted problem(s) occurred parsing the date column.\n Check sample: ",
-            v2t(head(holidays$Date, 3))
-          )
+      url <- paste0("https://www.timeanddate.com/holidays/", tolower(combs$country[i]), "/", combs$year[i])
+      # call httr's GET however set header to only accept English named date parts (months)
+      # otherwise if user uses own locale, for instance German, an error can occur parsing dates of holidays
+      # compare with plain call without additional headers in different locale: holidays <- content(GET(url))
+      ret <- try(content(GET(url, add_headers("Accept-Language" = "en"))))
+      if ("xml_document" %in% class(ret)) {
+        holidays <- ret %>%
+          html_nodes(".table") %>%
+          html_table(fill = TRUE) %>%
+          data.frame(.) %>%
+          filter(!is.na(.data$Date)) %>%
+          select(-2L) %>%
+          mutate(Date = paste(.data$Date, combs$year[i])) %>%
+          .[-1L, ] %>%
+          removenacols(all = TRUE) %>%
+          removenarows(all = TRUE)
+        colnames(holidays) <- if (include_regions & ncol(holidays) > 3) {
+          c("Date", "Holiday", "Holiday.Type", "Holiday.Details")
+        } else {
+          c("Date", "Holiday", "Holiday.Type")
         }
-      )
 
-      result <- data.frame(
-        holiday = holidays$Date,
-        holiday_name = holidays$Holiday,
-        holiday_type = holidays$Holiday.Type
-      )
-      if (include_regions) result$holiday_details <- holidays$Holiday.Details
-      result <- result %>%
-        mutate(
-          national = grepl("National|Federal", holidays$Holiday.Type),
-          observance = grepl("Observance", holidays$Holiday.Type),
-          bank = grepl("Bank", holidays$Holiday.Type),
-          nonwork = grepl("Non-working", holidays$Holiday.Type),
-          season = grepl("Season", holidays$Holiday.Type),
-          hother = !grepl("National|Federal|Observance|Season", holidays$Holiday.Type)
-        ) %>%
-        {
-          if (length(unique(countries)) > 1L) {
-            mutate(., country = combs$country[i])
-          } else {
-            .
+        # the table might contain comment about interstate holidays like
+        # '* Observed only in some communities of this state.
+        # Hover your mouse over the region or click on the holiday for details.'
+        # this will not parse as Date but create a warning, hence handling it here
+        grep_comment <- grep("*", holidays$Date, fixed = TRUE)
+        if (length(grep_comment) != 0L) {
+          holidays <- holidays[-grep_comment, ]
+        }
+        holidays$Date <- tryCatch(
+          {
+            lubridate::dmy(holidays$Date)
+          },
+          error = function(cond) {
+            stop(
+              "Unaccounted problem(s) occurred parsing the date column.\n Check sample: ",
+              v2t(head(holidays$Date, 3))
+            )
           }
-        }
-      result$county <- combs$country[i]
-      results <- bind_rows(results, result)
+        )
+
+        result <- data.frame(
+          holiday = holidays$Date,
+          holiday_name = holidays$Holiday,
+          holiday_type = holidays$Holiday.Type
+        )
+        if (include_regions) result$holiday_details <- holidays$Holiday.Details
+        result <- result %>%
+          mutate(
+            national = grepl("National|Federal", holidays$Holiday.Type),
+            observance = grepl("Observance", holidays$Holiday.Type),
+            bank = grepl("Bank", holidays$Holiday.Type),
+            nonwork = grepl("Non-working", holidays$Holiday.Type),
+            season = grepl("Season", holidays$Holiday.Type),
+            hother = !grepl("National|Federal|Observance|Season", holidays$Holiday.Type)
+          ) %>%
+          {
+            if (length(unique(countries)) > 1L) {
+              mutate(., country = combs$country[i])
+            } else {
+              .
+            }
+          }
+        result$county <- combs$country[i]
+        results <- bind_rows(results, result)
+      }
+      results <- results %>%
+        filter(!is.na(.data$holiday)) %>%
+        cleanNames() %>%
+        as_tibble()
     }
-    results <- results %>%
-      filter(!is.na(.data$holiday)) %>%
-      cleanNames() %>%
-      as_tibble()
+    results
   }
-  return(results)
 }

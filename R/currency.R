@@ -49,7 +49,7 @@ get_currency <- function(currency_pair,
   ))))
   if ("try-error" %in% class(x)) {
     warning(x)
-    return(x)
+    x
   }
   dates <- as.Date(gsub("\\.", "\\-", gsub("X", "", rownames(x))))
   rate <- data.frame(date = dates, rate = x[, 1])
@@ -68,6 +68,5 @@ get_currency <- function(currency_pair,
       mutate(date = as.Date(date)) %>%
       filter(date >= as.Date(from))
   }
-
-  return(rate)
+  rate
 }

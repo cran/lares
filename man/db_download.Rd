@@ -32,7 +32,7 @@ NA if you already set your credentials (see \code{get_creds()})}
 
 \item{token_name}{Character. RDS file name with your token's data.}
 
-\item{quiet}{Boolean. Keep quiet? If not, show informative messages.}
+\item{quiet}{Boolean. Keep quiet? If not, informative messages will be shown.}
 }
 \value{
 If \code{query} returns a .xlsx file and \code{xlsx=TRUE}, will
@@ -57,6 +57,7 @@ Other Tools:
 \code{\link{bring_api}()},
 \code{\link{chr2num}()},
 \code{\link{db_upload}()},
+\code{\link{dont_sleep}()},
 \code{\link{export_plot}()},
 \code{\link{export_results}()},
 \code{\link{files_functions}()},

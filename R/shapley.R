@@ -77,16 +77,16 @@ h2o_shap <- function(model, test = "auto", scores = "auto", y = "y", ...) {
   attr(shap, "test") <- as_tibble(test)
   attr(shap, "scores") <- scores
   if (auto) attr(shap, "y") <- y
-  return(shap)
+  shap
 }
 
 ####################################################################
 #' @rdname h2o_shap
 #' @aliases h2o_shap
+#' @inheritParams get_mp3
 #' @param x h2o_shap object
 #' @param relevant Boolean. Keep only relevant non-trivial (>0) features
 #' @param top Integer. Plot only top n values (as in importance)
-#' @param quiet Boolean. Print messages?
 #' @export
 plot.h2o_shap <- function(x, relevant = TRUE, top = 15, quiet = FALSE, ...) {
   if (!inherits(x, "h2o_shap")) {
@@ -166,7 +166,7 @@ plot.h2o_shap <- function(x, relevant = TRUE, top = 15, quiet = FALSE, ...) {
 
   # Combine plots
   p <- p1 + p2
-  return(p)
+  p
 }
 
 
@@ -250,8 +250,7 @@ shap_var <- function(x, var, keep_outliers = FALSE) {
       subtitle = paste("Predicted variable:", y)
     ) +
     theme_lares()
-
-  return(p)
+  p
 }
 
 # # Train a model

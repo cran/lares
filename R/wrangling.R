@@ -57,7 +57,7 @@ date_cuts <- function(date = Sys.Date(), type = "Q") {
       paste0(toupper(type), i), .data$cut
     ))
   }
-  return(df$cut)
+  df$cut
 }
 
 
@@ -78,16 +78,14 @@ date_cuts <- function(date = Sys.Date(), type = "Q") {
 #' @rdname left_right
 left <- function(string, n = 1) {
   string <- as.character(string)
-  l <- substr(string, 1, n)
-  return(l)
+  substr(string, 1, n)
 }
 
 #' @rdname left_right
 #' @export
 right <- function(string, n = 1) {
   string <- as.character(string)
-  r <- substr(string, nchar(string) - n + 1, nchar(string))
-  return(r)
+  substr(string, nchar(string) - n + 1, nchar(string))
 }
 
 
@@ -134,14 +132,15 @@ normalize <- function(x, range = c(0, 1), ...) {
     stop("Input must be a numeric vector!")
   }
   if (length(unique(x)) == 1) {
-    return(rep(range[2], length(x)))
+    rep(range[2], length(x))
+  } else {
+    if (!is.numeric(range) || length(range) != 2 || range[1] >= range[2]) {
+      stop("Parameter 'range' must be a numeric vector of length 2 with range[1] < range[2].")
+    }
+    scaled_x <- (x - min(x, ...)) / (max(x, ...) - min(x, ...))
+    normalized_x <- scaled_x * (range[2] - range[1]) + range[1]
+    normalized_x
   }
-  if (!is.numeric(range) || length(range) != 2 || range[1] >= range[2]) {
-    stop("Parameter 'range' must be a numeric vector of length 2 with range[1] < range[2].")
-  }
-  scaled_x <- (x - min(x, ...)) / (max(x, ...) - min(x, ...))
-  normalized_x <- scaled_x * (range[2] - range[1]) + range[1]
-  return(normalized_x)
 }
 
 
@@ -166,64 +165,57 @@ normalize <- function(x, range = c(0, 1), ...) {
 #' @export
 num_abbr <- function(x, n = 3, numeric = FALSE, ...) {
   if (is.null(x)) {
-    return(x)
-  }
-  if (!is.numeric(x)) {
-    if (!numeric) {
-      stop("Input vector 'x' needs to be numeric. To convert abbr to num, set numeric = TRUE")
-    }
-  }
-  if (!is.numeric(n)) stop("Input 'n' needs to be numeric.")
-  if (length(n) > 1) stop("Please make sure that n takes on a single value.")
-  if (!n %in% 1:6) stop("Please make sure that n takes on an interger value between 1 to 6.")
-
-  if (numeric) {
-    num <- as.numeric(gsub("[A-z]+", "", x))
-    abbr_value <- unlist(lapply(seq_along(x), function(i) {
-      abbr <- gsub(as.character(num[i]), "", x[i])
-      av <- dplyr::case_when(
-        abbr == "" ~ 1,
-        abbr == "K" ~ 1E3,
-        abbr == "M" ~ 1E6,
-        abbr == "B" ~ 1E9,
-        abbr == "T" ~ 1E12,
-        abbr == "Qa" ~ 1E15,
-        abbr == "Qi" ~ 1E18,
-        TRUE ~ NA
-      )
-      return(as.numeric(av))
-    }))
-    output <- num * abbr_value
-    return(output)
+    x
   } else {
-    # # To handle scientific notation inputs correctly
-    # on.exit(options("scipen" = getOption('scipen')))
-    # options("scipen" = 999)
+    if (!is.numeric(x)) {
+      if (!numeric) {
+        stop("Input vector 'x' needs to be numeric. To convert abbr to num, set numeric = TRUE")
+      }
+    }
+    if (!is.numeric(n)) stop("Input 'n' needs to be numeric.")
+    if (length(n) > 1) stop("Please make sure that n takes on a single value.")
+    if (!n %in% 1:6) stop("Please make sure that n takes on an interger value between 1 to 6.")
 
-    # Clean up x
-    negative_positions <- ifelse(x < 0, "-", "")
-    x <- abs(x)
-
-    div <- findInterval(x, c(0, 1e3, 1e6, 1e9, 1e12, 1e15, 1e18))
-
-    # Round x with some cleaning
-    x <- round(x, -nchar(round(x, 0)) + n) / 10^(3 * (div - 1))
-
-    # Fix numbers rounded up to another digit
-    # i.e. 999k -> 1000k should actually be 1M
-    div <- ifelse(nchar(as.integer(x)) > 3, div + 1, div)
-    x <- ifelse(nchar(as.integer(x)) > 3, x / 1e3, x)
-
-    # Cap decimal places to 3
-    x <- round(x, 3)
-
-    # Qa = Quadrillion; Qi = Quintillion
-    x <- paste0(x, c("", "K", "M", "B", "T", "Qa", "Qi")[div])
-
-    output <- paste0(negative_positions, x)
-    output[grepl("NA", output)] <- NA
-
-    return(output)
+    if (numeric) {
+      num <- as.numeric(gsub("[A-z]+", "", x))
+      abbr_value <- unlist(lapply(seq_along(x), function(i) {
+        abbr <- gsub(as.character(num[i]), "", x[i])
+        av <- dplyr::case_when(
+          abbr == "" ~ 1,
+          abbr == "K" ~ 1E3,
+          abbr == "M" ~ 1E6,
+          abbr == "B" ~ 1E9,
+          abbr == "T" ~ 1E12,
+          abbr == "Qa" ~ 1E15,
+          abbr == "Qi" ~ 1E18,
+          TRUE ~ NA
+        )
+        as.numeric(av)
+      }))
+      output <- num * abbr_value
+      output
+    } else {
+      # # To handle scientific notation inputs correctly
+      # on.exit(options("scipen" = getOption('scipen')))
+      # options("scipen" = 999)
+      # Clean up x
+      negative_positions <- ifelse(x < 0, "-", "")
+      x <- abs(x)
+      div <- findInterval(x, c(0, 1e3, 1e6, 1e9, 1e12, 1e15, 1e18))
+      # Round x with some cleaning
+      x <- round(x, -nchar(round(x, 0)) + n) / 10^(3 * (div - 1))
+      # Fix numbers rounded up to another digit
+      # i.e. 999k -> 1000k should actually be 1M
+      div <- ifelse(nchar(as.integer(x)) > 3, div + 1, div)
+      x <- ifelse(nchar(as.integer(x)) > 3, x / 1e3, x)
+      # Cap decimal places to 3
+      x <- round(x, 3)
+      # Qa = Quadrillion; Qi = Quintillion
+      x <- paste0(x, c("", "K", "M", "B", "T", "Qa", "Qi")[div])
+      output <- paste0(negative_positions, x)
+      output[grepl("NA", output)] <- NA
+      output
+    }
   }
 }
 
@@ -299,7 +291,7 @@ categ_reducer <- function(df, var,
   }
 
   df[[as.character(name)]] <- new_vector
-  return(df)
+  df
 }
 
 
@@ -360,7 +352,7 @@ vector2text <- function(vector, sep = ", ", quotes = TRUE, force_single = FALSE,
     output <- gsub('\"', "'", output)
   }
 
-  return(output)
+  output
 }
 #' @rdname vector2text
 #' @export
@@ -404,42 +396,42 @@ formatNum <- function(x, decimals = 2, signif = NULL,
                       abbr = FALSE,
                       ...) {
   if (is.null(x) || !is.numeric(x)) {
-    return(x)
-  }
-
-  # Auxiliary function to save signs
-  if (sign) signs <- ifelse(x > 0, "+", "")
-
-  # Decimals: Round numbers
-  if (is.null(decimals)) decimals <- getOption("digits")
-  x <- base::round(x, digits = decimals)
-
-  # Significant digits
-  if (!is.null(signif)) {
-    x <- lapply(x, function(y) if (is.na(y)) y else base::signif(y, signif))
-  }
-
-  if (abbr) {
-    x <- unlist(lapply(x, function(y) if (is.na(y)) y else num_abbr(y, n = decimals + 1)))
+    x
   } else {
-    x <- unlist(lapply(x, function(y) {
-      if (is.na(y)) {
-        y
-      } else {
-        if (type == 1) {
-          y <- format(as.numeric(y), big.mark = ".", decimal.mark = ",", ...)
-        } else {
-          y <- format(as.numeric(y), big.mark = ",", decimal.mark = ".", ...)
-        }
-        trimws(y)
-      }
-    }))
-  }
+    # Auxiliary function to save signs
+    if (sign) signs <- ifelse(x > 0, "+", "")
 
-  if (pre == "$") x <- gsub("\\$-", "-$", x)
-  if (sign) x <- paste0(signs, x)
-  ret <- paste0(pre, x, pos)
-  return(ret)
+    # Decimals: Round numbers
+    if (is.null(decimals)) decimals <- getOption("digits")
+    x <- base::round(x, digits = decimals)
+
+    # Significant digits
+    if (!is.null(signif)) {
+      x <- lapply(x, function(y) if (is.na(y)) y else base::signif(y, signif))
+    }
+
+    if (abbr) {
+      x <- unlist(lapply(x, function(y) if (is.na(y)) y else num_abbr(y, n = decimals + 1)))
+    } else {
+      x <- unlist(lapply(x, function(y) {
+        if (is.na(y)) {
+          y
+        } else {
+          if (type == 1) {
+            y <- format(as.numeric(y), big.mark = ".", decimal.mark = ",", ...)
+          } else {
+            y <- format(as.numeric(y), big.mark = ",", decimal.mark = ".", ...)
+          }
+          trimws(y)
+        }
+      }))
+    }
+
+    if (pre == "$") x <- gsub("\\$-", "-$", x)
+    if (sign) x <- paste0(signs, x)
+    ret <- paste0(pre, x, pos)
+    ret
+  }
 }
 
 
@@ -450,6 +442,7 @@ formatNum <- function(x, decimals = 2, signif = NULL,
 #' with a given relation rate and a binary feature.
 #'
 #' @family Data Wrangling
+#' @inheritParams get_mp3
 #' @param df Vector or Dataframe. Contains different variables in each
 #' column, separated by a specific character
 #' @param var Variable. Which variable should we used to re-sample dataset?
@@ -458,13 +451,12 @@ formatNum <- function(x, decimals = 2, signif = NULL,
 #' @param target Character. If binary, which value should be reduced? If kept in
 #' \code{"auto"}, then the most frequent value will be reduced.
 #' @param seed Numeric. Seed to replicate and obtain same values
-#' @param quiet Boolean. Keep quiet? If not, messages will be printed
 #' @return data.frame. Reduced sampled data.frame following the \code{rate} of
 #' appearance of a specific variable.
 #' @examples
 #' data(dft) # Titanic dataset
-#' df <- balance_data(dft, Survived, rate = 0.5)
-#' df <- balance_data(dft, .data$Survived, rate = 0.1, target = "TRUE")
+#' df <- balance_data(dft, Survived, rate = 1)
+#' df <- balance_data(dft, .data$Survived, rate = 0.5, target = "TRUE")
 #' @export
 balance_data <- function(df, var, rate = 1, target = "auto", seed = 0, quiet = FALSE) {
   on.exit(set.seed(seed))
@@ -517,7 +509,7 @@ balance_data <- function(df, var, rate = 1, target = "auto", seed = 0, quiet = F
     }
   }
   balanced <- rename_at(balanced, vars("tag"), list(~ paste0(var)))
-  return(as_tibble(balanced))
+  as_tibble(balanced)
 }
 
 
@@ -531,13 +523,13 @@ balance_data <- function(df, var, rate = 1, target = "auto", seed = 0, quiet = F
 #'
 #' @family Data Wrangling
 #' @family Text Mining
+#' @inheritParams get_mp3
 #' @param df Data.frame or Vector
 #' @param original String or Vector. Original text you wish to replace
 #' @param change String or Vector. Values you wish to replace the originals with
 #' @param which Character vector. Name of columns to use. Leave "all" for everything
 #' @param fixclass Boolean. Try to detect logical classes after transformations (or
 #' leave as default classes as character)?
-#' @param quiet Boolean. Keep quiet? (or print replacements)
 #' @return data.frame with replaced values based on inputs.
 #' @examples
 #' df <- data.frame(
@@ -617,9 +609,9 @@ replaceall <- function(df, original, change, which = "all",
     df <- suppressMessages(type.convert(df, numerals = "no.loss", as.is = TRUE))
   }
   if (vector) {
-    return(as.vector(df))
+    as.vector(df)
   } else {
-    return(as_tibble(df))
+    as_tibble(df)
   }
 }
 
@@ -651,13 +643,9 @@ quants <- function(values, splits = 10, return = "labels", n = 2) {
   if (splits > length(unique(values[!is.na(values)])) - 1) {
     stop("There are not enough observations to split the data in ", splits)
   }
-
   cuts <- quantile(values, probs = seq(0, 1, length = splits + 1), na.rm = TRUE)
   labels <- cut(values, unique(cuts), dig.lab = n, include.lowest = TRUE, ordered_result = TRUE)
-
-  if (return == "labels") {
-    return(labels)
-  }
+  output <- labels
   if (return == "summary") {
     output <- data.frame(percentile = names(cuts)[-1], cut = cuts[-1]) %>%
       mutate(
@@ -665,8 +653,8 @@ quants <- function(values, splits = 10, return = "labels", n = 2) {
         label = gsub("\\(NA", paste0("[", signif(min(.data$cut), n)), .data$label),
         label = factor(.data$label, levels = unique(.data$label), ordered = TRUE)
       )
-    return(output)
   }
+  output
 }
 
 
@@ -693,7 +681,7 @@ dist2d <- function(x, a = c(0, 0), b = c(1, 1)) {
     v2 <- x - a
     m <- cbind(v1, v2)
     d <- abs(det(m)) / sqrt(sum(v1 * v1))
-    return(d)
+    d
   } else {
     stop("Every point most consist of 2 values (X & Y), thus all input lengths must be 2.")
   }
@@ -716,15 +704,16 @@ dist2d <- function(x, a = c(0, 0), b = c(1, 1)) {
 #' @rdname filterdata
 removenacols <- function(df, all = TRUE, ignore = NULL) {
   if (is.null(df)) {
-    return(NULL)
-  }
-  if (!is.data.frame(df)) stop("Input 'df' must be a valid data.frame")
-  if (all) {
-    not_all_nas <- colSums(is.na(df)) != nrow(df)
-    keep <- (colnames(df) %in% ignore) | as.vector(not_all_nas)
-    df[, keep]
+    NULL
   } else {
-    df[, complete.cases(t(df[!colnames(df) %in% ignore]))]
+    if (!is.data.frame(df)) stop("Input 'df' must be a valid data.frame")
+    if (all) {
+      not_all_nas <- colSums(is.na(df)) != nrow(df)
+      keep <- (colnames(df) %in% ignore) | as.vector(not_all_nas)
+      df[, keep]
+    } else {
+      df[, complete.cases(t(df[!colnames(df) %in% ignore]))]
+    }
   }
 }
 
@@ -743,13 +732,14 @@ removenacols <- function(df, all = TRUE, ignore = NULL) {
 #' @rdname filterdata
 removenarows <- function(df, all = TRUE) {
   if (is.null(df)) {
-    return(NULL)
-  }
-  if (!is.data.frame(df)) stop("df must be a valid data.frame")
-  if (all) {
-    return(df[rowSums(is.na(df)) != ncol(df), ])
+    NULL
   } else {
-    return(df[complete.cases(df), ])
+    if (!is.data.frame(df)) stop("df must be a valid data.frame")
+    if (all) {
+      df[rowSums(is.na(df)) != ncol(df), ]
+    } else {
+      df[complete.cases(df), ]
+    }
   }
 }
 
@@ -809,7 +799,7 @@ numericalonly <- function(df, dropnacols = TRUE, logs = FALSE, natransform = NA)
       }
     }
   }
-  return(d)
+  d
 }
 
 

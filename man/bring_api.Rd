@@ -26,6 +26,7 @@ Other Tools:
 \code{\link{chr2num}()},
 \code{\link{db_download}()},
 \code{\link{db_upload}()},
+\code{\link{dont_sleep}()},
 \code{\link{export_plot}()},
 \code{\link{export_results}()},
 \code{\link{files_functions}()},
@@ -68,8 +69,6 @@ Other API:
 \code{\link{fb_token}()},
 \code{\link{gemini_ask}()},
 \code{\link{gpt_ask}()},
-\code{\link{li_auth}()},
-\code{\link{li_profile}()},
 \code{\link{queryGA}()},
 \code{\link{slackSend}()}
 }
