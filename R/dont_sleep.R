@@ -17,11 +17,11 @@
 #'
 #' @family Tools
 #' @param sec_range Numeric vector of length 2. Range (in seconds) of
-#'   random intervals between mouse movements and clicks. Default is \code{c(20, 60)}.
+#' random intervals between mouse movements and clicks. Default is \code{c(20, 60)}.
 #' @param off_time Numeric. Decimal hour (24h format) to stop the function
-#'   automatically, e.g. 18.5 means 18:30 (6:30 PM). Default is \code{18.5}.
+#' automatically, e.g. 18.5 means 18:30 (6:30 PM). Default is \code{18.5}.
 #' @param quiet Logical. If \code{TRUE}, suppresses progress messages.
-#'   Default is \code{FALSE}.
+#' Default is \code{FALSE}.
 #' @return Invisibly returns \code{NULL} when the function exits.
 #' @examples
 #' \dontrun{
@@ -72,13 +72,37 @@ dont_sleep_time <- function(quiet = FALSE) {
 .dont_sleep_tracker <- new.env(parent = emptyenv())
 
 .track_dont_sleep <- function(start_time) {
-  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
-  today <- as.character(Sys.Date())
-  if (!exists(today, envir = .dont_sleep_tracker)) {
-    assign(today, elapsed, envir = .dont_sleep_tracker)
+  end_time <- Sys.time()
+  start_date <- as.Date(start_time)
+  end_date <- as.Date(end_time)
+  if (start_date == end_date) {
+    # Same day, assign normally
+    elapsed <- as.numeric(difftime(end_time, start_time, units = "secs"))
+    if (!exists(as.character(start_date), envir = .dont_sleep_tracker)) {
+      assign(as.character(start_date), elapsed, envir = .dont_sleep_tracker)
+    } else {
+      previous <- get(as.character(start_date), envir = .dont_sleep_tracker)
+      assign(as.character(start_date), previous + elapsed, envir = .dont_sleep_tracker)
+    }
   } else {
-    previous <- get(today, envir = .dont_sleep_tracker)
-    assign(today, previous + elapsed, envir = .dont_sleep_tracker)
+    # Crosses midnight, split time by day
+    midnight <- as.POSIXct(paste0(start_date + 1, " 00:00:00"), tz = attr(start_time, "tzone"))
+    first_day_secs <- as.numeric(difftime(midnight, start_time, units = "secs"))
+    second_day_secs <- as.numeric(difftime(end_time, midnight, units = "secs"))
+    # Assign first day
+    if (!exists(as.character(start_date), envir = .dont_sleep_tracker)) {
+      assign(as.character(start_date), first_day_secs, envir = .dont_sleep_tracker)
+    } else {
+      previous <- get(as.character(start_date), envir = .dont_sleep_tracker)
+      assign(as.character(start_date), previous + first_day_secs, envir = .dont_sleep_tracker)
+    }
+    # Assign second day
+    if (!exists(as.character(end_date), envir = .dont_sleep_tracker)) {
+      assign(as.character(end_date), second_day_secs, envir = .dont_sleep_tracker)
+    } else {
+      previous <- get(as.character(end_date), envir = .dont_sleep_tracker)
+      assign(as.character(end_date), previous + second_day_secs, envir = .dont_sleep_tracker)
+    }
   }
 }
 
@@ -96,6 +120,7 @@ dont_sleep_time <- function(quiet = FALSE) {
 
   start_time <- Sys.time()
   tic(paste(label, start_time))
+  timeout <- moved <- FALSE
 
   # Ensure time is tracked even if user stops manually
   on.exit(
@@ -105,6 +130,8 @@ dont_sleep_time <- function(quiet = FALSE) {
         lap <- toc(paste(label, start_time), quiet = TRUE)
         now_fmt <- format(start_time, format = "%Y-%M-%d %H:%M:%S")
         cat(sprintf("\rStarted %s ago (%s)    \n", lap$time, now_fmt))
+        if (moved) message("Mouse moved by user. Exiting at ", now)
+        if (timeout) message("Off-time triggered at ", format(now_posix, "%Y-%m-%d %H:%M:%S"))
       }
     },
     add = TRUE
@@ -114,7 +141,7 @@ dont_sleep_time <- function(quiet = FALSE) {
     now <- format(Sys.time(), format = "%Y-%M-%d %H:%M:%S")
     pos <- get_mouse_position()
     if (length(pos) != 2 || any(pos != c(0, 0))) {
-      message("Mouse moved by user. Exiting at ", now)
+      moved <- TRUE
       break
     }
 
@@ -131,10 +158,11 @@ dont_sleep_time <- function(quiet = FALSE) {
 
     now_posix <- as.POSIXlt(Sys.time())
     if ((now_posix$hour + now_posix$min / 60 + now_posix$sec / 3600) >= off_time) {
-      message("\nOff-time triggered at ", format(now_posix, "%Y-%m-%d %H:%M:%S"))
+      timeout <- TRUE
       break
     }
 
+    if (length(sec_range) == 1) sec_range <- rep(sec_range, 2)
     Sys.sleep(runif(1, sec_range[1], sec_range[2]))
   }
 

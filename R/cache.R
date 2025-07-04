@@ -27,7 +27,7 @@
 #' base <- c(as.character(Sys.Date()), "A", "B")
 #' cache_write(x, base)
 #' cache_read(base, ask = FALSE)
-#' cache_exists("lares_cache_2021-06-01.A.B.C")
+#' cache_exists(base)
 #' cache_clear()
 #' @export
 cache_write <- function(data,
