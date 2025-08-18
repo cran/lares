@@ -81,5 +81,15 @@ cache_write(x, base)
 cache_read(base, ask = FALSE)
 cache_exists(base)
 cache_clear()
+
+# Use cache_pipe() for automatic use (saves and loads if exists)
+cache_pipe({
+  x <- 1
+  x + 1
+})
+cache_pipe({
+  x <- 1
+  x + 1
+})
 }
 \concept{Cache}
