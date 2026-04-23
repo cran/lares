@@ -130,6 +130,7 @@ recommended <- list(
   ),
   quantmod = c("getDividends", "getSymbols", "getQuote"),
   rdrop2 = c("drop_auth", "drop_dir", "drop_download", "drop_search", "drop_upload"),
+  reticulate = c("import", "tuple"),
   rgdal = c("readOGR", "project"),
   Robyn = c("robyn_allocator", "robyn_immcarr", "robyn_response"),
   RPostgreSQL = "PostgreSQL",
@@ -137,6 +138,7 @@ recommended <- list(
   rtweet = c("create_token", "search_tweets"),
   rmarkdown = "render",
   skimr = "skim",
+  spotifyr = c("get_album", "get_spotify_access_token", "search_spotify"),
   syuzhet = "get_sentiment_dictionary",
   # sp = c("CRS", "over", "coordinates", "proj4string", "proj4string<-", "coordinates<-", "spTransform"),
   threed = c("mesh3dobj", "transform_by", "invert_matrix", "perspective_projection", "look_at_matrix"),
@@ -146,6 +148,7 @@ recommended <- list(
     "removeWords", "readPlain", "stopwords", "stripWhitespace", "TermDocumentMatrix",
     "tm_map", "VectorSource", "VCorpus"
   ),
+  toon = "as_toon",
   udpipe = c("keywords_rake", "udpipe_annotate", "udpipe_download_model", "udpipe_load_model"),
   wordcloud = c("wordcloud", "textplot")
 )

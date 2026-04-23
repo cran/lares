@@ -29,7 +29,9 @@
 #' If used frequently, set your directory by using the \code{.Renviron} file.
 #' To do so, leave \code{dir} as \code{NA} and follow the steps.
 #' If \code{dir} is a list, it'll return \code{dir} (manual credentials input).
+#' If \code{dir} ends with \code{.yml} or \code{.yaml}, \code{filename} will be ignored.
 #' @param filename Character. YML filename with your credentials.
+#' Ignored if \code{dir} contains the file path.
 #' @param env Character. Environment variable name. No need to set differently
 #' for any function that uses this library. Only for external use.
 #' @return List. Result of reading your credential's YML file, filtered by your
@@ -59,34 +61,43 @@ get_credentials <- function(from = NA, dir = NA,
   } else {
     if (isTRUE(is.na(dir)) || isTRUE(is.null(dir))) {
       dir <- Sys.getenv(env)
-      if (dir == "") {
-        message(sprintf(
-          "Please, set your creds directory (one-time only step to set %s):", env
-        ))
-        dir <- readline(sprintf("Set directory where your %s file is saved: ", filename))
-        if (!dir.exists(dir)) {
-          stop(sprintf("Directory: %s. \nCan't find or does not exist. Please try again...", dir))
-        }
-        line <- sprintf("%s=%s", env, dir)
-        write(line, file = "~/.Renviron", append = TRUE)
-        message("ALL's SET! But, you must reset your session for it to work!")
-        invisible(NULL)
+    }
+    if (dir == "") {
+      message(sprintf(
+        "Please, set your creds directory (one-time only step to set %s):", env
+      ))
+      dir <- readline(sprintf("Set directory where your %s file is saved: ", filename))
+      if (!dir.exists(dir)) {
+        stop(sprintf("Directory: %s. \nCan't find or does not exist. Please try again...", dir))
+      }
+      line <- sprintf("%s=%s", env, dir)
+      write(line, file = "~/.Renviron", append = TRUE)
+      message("ALL's SET! But, you must reset your session for it to work!")
+      invisible(NULL)
+    } else {
+      # Handle .yml file in dir parameter
+      if (grepl("\\.ya?ml$", dir)) {
+        file <- dir
       } else {
-        file <- paste0(dir, "/", filename)
-        if (!file.exists(file)) {
-          message(sprintf("YML file with credentials not found in %s", dir))
-        } else {
-          credentials <- yaml::read_yaml(file)$default
-          if (is.null(credentials)) {
-            trues <- names(credentials)
-            warning(paste(
-              "No credentials for", from, "found in your YML file.",
-              "\nTry any of the following:", v2t(trues)
-            ))
-          }
-          if (!is.na(from)) credentials <- credentials[[from]]
-          credentials
+        # Normalize paths to handle slash inconsistencies
+        dir <- gsub("/+$", "", dir)
+        filename <- gsub("^/+", "", filename)
+        file <- file.path(dir, filename)
+      }
+
+      if (!file.exists(file)) {
+        message(sprintf("YML file with credentials not found in %s", dir))
+      } else {
+        credentials <- yaml::read_yaml(file)$default
+        if (is.null(credentials)) {
+          trues <- names(credentials)
+          warning(paste(
+            "No credentials for", from, "found in your YML file.",
+            "\nTry any of the following:", v2t(trues)
+          ))
         }
+        if (!is.na(from)) credentials <- credentials[[from]]
+        credentials
       }
     }
   }

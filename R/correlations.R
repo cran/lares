@@ -136,7 +136,7 @@ corr <- function(df, method = "pearson",
 #' @family Exploratory
 #' @family Correlations
 #' @inheritParams corr
-#' @inheritParams get_mp3
+#' @inheritParams mp3_get
 #' @param var Variable. Name of the variable to correlate. Note that if the
 #' variable \code{var} is not numerical, 1. you may define which category to select
 #' from using `var_category`; 2. You may have to add \code{redundant = TRUE} to
@@ -336,14 +336,13 @@ plot.corr_var <- function(x, var, max_pvalue = 1, top = NA, limit = NULL, ...) {
 #' This function creates a correlation full study and returns a rank
 #' of the highest correlation variables obtained in a cross-table.
 #'
-#' DataScience+ Post:
-#' \href{https://datascienceplus.com/find-insights-with-ranked-cross-correlations/}{Find
-#' Insights with Ranked Cross-Correlations}
+#' For a detailed tutorial on using this function, see:
+#' \href{https://www.r-bloggers.com/2019/08/find-insights-with-ranked-cross-correlations/}{Find Insights with Ranked Cross-Correlations}
 #'
+#' @family Calculus
 #' @family Correlations
-#' @family Exploratory
 #' @inheritParams corr
-#' @inheritParams corr_var
+#' @param df data.frame
 #' @param plot Boolean. Show and return a plot?
 #' @param max_pvalue Numeric. Filter non-significant variables. Range (0, 1]
 #' @param type Integer. Plot type. 1 is for overall rank. 2 is for local rank.
@@ -355,6 +354,7 @@ plot.corr_var <- function(x, var, max_pvalue = 1, top = NA, limit = NULL, ...) {
 #' with variables that contains certain strings (using any value if vector used).
 #' @param grid Boolean. Separate into grids?
 #' @param rm.na Boolean. Remove NAs?
+#' @param quiet Boolean. Keep quiet? If not, show messages
 #' @param ... Additional parameters passed to \code{corr}
 #' @return Depending on input \code{plot}, we get correlation and p-value results for
 #' every combination of features, arranged by descending absolute correlation value,
@@ -398,15 +398,15 @@ corr_cross <- function(df, plot = TRUE,
     mutate(pvalue = as.numeric(ifelse(is.na(.data$pvalue), 1, .data$pvalue))) %>%
     filter(.data$pvalue <= max_pvalue)
 
-  for (i in seq_along(df)) {
-    if (i == 1) {
-      ret <- mutate(ret, group1 = "fill", group2 = "fill")
-    }
-    group <- colnames(df)[i]
-    aux <- ifelse(grepl(group, ret$key), group, "fill")
-    ret$group1 <- ifelse(ret$group1 == "fill", aux, ret$group1)
-    aux <- ifelse(grepl(group, ret$mix), group, "fill")
-    ret$group2 <- ifelse(ret$group2 == "fill", aux, ret$group2)
+  ret <- ret %>%
+    mutate(group1 = "fill", group2 = "fill")
+
+  for (group in colnames(df)) {
+    ret <- ret %>%
+      mutate(
+        group1 = ifelse(.data$group1 == "fill" & grepl(group, .data$key), group, .data$group1),
+        group2 = ifelse(.data$group2 == "fill" & grepl(group, .data$mix), group, .data$group2)
+      )
   }
   ret <- filter(ret, .data$group1 != .data$group2)
   if (nrow(ret) > top && !is.na(top) && !quiet && type != 2) {

@@ -24,21 +24,28 @@
 #' @param open,delete Boolean. After everything's done, should the
 #' file be opened? Should it be deleted?
 #' @param info Boolean. Import and return metadata?
-#' @param cover Boolean. Google Search its squared cover?
+#' @param title Character. Title of the track to search for cover, metadata, and
+#' name the file.
+#' @param cover Boolean. Google Search its squared cover? Uses \code{title}
+#' input when provided.
+#' @param metadata Boolean. Use iTunes Search API (free) to extract "track" 
+#' data and high-res cover art. Falls back to "spotifyr" if no results
+#' are found (requires credentials and, since 2026-03-09, Spotify Premium 
+#' linked to the client id). Uses \code{title} input when provided.
 #' @param quiet Boolean. Keep quiet? If not, informative messages will be shown.
 #' @return (Invisible) list with id's meta-data.
 #' @examples
 #' # You must have "youtube-dl" installed in your OS:
 #' \dontrun{
 #' # Download video from YouTube and convert to MP3
-#' get_mp3("https://www.youtube.com/watch?v=lrlKcCdVw9Q")
+#' mp3_get("https://www.youtube.com/watch?v=lrlKcCdVw9Q")
 #' # OR simply
-#' get_mp3("lrlKcCdVw9Q")
+#' mp3_get("lrlKcCdVw9Q")
 #' # For dev version, use:
-#' get_mp3("m3RX4LJh0iI", repo = "yt-dlp")
+#' mp3_get("m3RX4LJh0iI", repo = "yt-dlp")
 #' }
 #' @export
-get_mp3 <- function(id,
+mp3_get <- function(id,
                     mp3 = TRUE,
                     repo = "yt-dlp",
                     params = "--no-check-certificate",
@@ -48,7 +55,9 @@ get_mp3 <- function(id,
                     open = FALSE,
                     delete = open,
                     info = TRUE,
+                    title = NULL,
                     cover = FALSE,
+                    metadata = FALSE,
                     quiet = FALSE) {
   # Build query's parameters
   query <- "--rm-cache-dir"
@@ -103,6 +112,160 @@ get_mp3 <- function(id,
     invisible(file.remove(f))
     infox[["formats"]] <- NULL
 
+    # The actual file path created by youtube-dl
+    mp3_file_original <- gsub(".info.json", ".mp3", f)
+    mp3_file <- mp3_file_original
+
+    if (!is.null(title)) {
+      infox$title <- title
+      safe_title_for_file <- trimws(title)
+      safe_title_for_file <- gsub("\\s+", " ", safe_title_for_file)
+      new_mp3_file_base <- paste0(safe_title_for_file, ".mp3")
+      new_mp3_path <- file.path(dirname(mp3_file_original), new_mp3_file_base)
+      if (file.exists(mp3_file_original)) {
+        if (file.exists(new_mp3_path) && overwrite) {
+          file.remove(new_mp3_path)
+        } else if (file.exists(new_mp3_path) && !overwrite) {
+          if (!quiet) warning(paste("File already exists:", basename(new_mp3_path), "- skipping rename"))
+          mp3_file <- mp3_file_original
+        }
+        if (file.exists(mp3_file_original) && !file.exists(new_mp3_path)) {
+          file.rename(mp3_file_original, new_mp3_path)
+          mp3_file <- new_mp3_path
+          if (!quiet) message(sprintf("File renamed to: %s", basename(mp3_file)))
+        }
+      } else {
+        if (!quiet) warning("Could not find the original MP3 file for renaming. Proceeding with original filename.")
+      }
+    }
+
+    filename <- basename(mp3_file)
+
+    if (metadata) {
+      # Clean search term: remove (lyrics), [official], etc.
+      q <- gsub("\\(?lyrics?\\)?|\\(?official\\)?|\\(?video\\)?|\\(?hd\\)?|\\(?4k\\)?", "", infox$title, ignore.case = TRUE)
+      q <- gsub("\\[?lyrics?\\]?|\\[?official\\]?|\\[?video\\]?|\\[?hd\\]?|\\[?4k\\]?", "", q, ignore.case = TRUE)
+      q <- gsub("\\s+", " ", q)
+      q <- trimws(q)
+      message(">>> Adding metadata: ", q)
+      
+      sp <- NULL
+      source <- NULL
+
+      # 1. Try iTunes Search API (Free, no key required, highly reliable)
+      tryCatch({
+        url <- paste0("https://itunes.apple.com/search?term=", URLencode(q), "&media=music&entity=song&limit=1")
+        itunes <- jsonlite::fromJSON(url)$results
+        if (length(itunes) > 0 && nrow(itunes) > 0) {
+          message(">>> Source: iTunes Search API")
+          sp <- data.frame(
+            name = itunes$trackName,
+            artists = I(list(data.frame(name = itunes$artistName))),
+            album.name = itunes$collectionName,
+            album.release_date = as.character(as.Date(itunes$releaseDate)),
+            track_number = itunes$trackNumber,
+            album.total_tracks = itunes$trackCount,
+            genre = itunes$primaryGenreName,
+            cover_url = gsub("100x100bb", "600x600bb", itunes$artworkUrl100),
+            stringsAsFactors = FALSE
+          )
+          source <- "itunes"
+        }
+      }, error = function(e) {
+        warning("iTunes metadata collection failed: ", e$message)
+      })
+
+      # 2. Try Spotify as Fallback (requires credentials and Premium)
+      if (is.null(sp)) {
+        try_require("spotifyr")
+        creds <- get_creds("spotify")
+        if (!is.null(creds$SPOTIFY_CLIENT_ID) && !is.null(creds$SPOTIFY_CLIENT_SECRET)) {
+          tryCatch({
+            authorization <- get_spotify_access_token(
+              client_id = creds$SPOTIFY_CLIENT_ID,
+              client_secret = creds$SPOTIFY_CLIENT_SECRET
+            )
+            sp <- search_spotify(
+              q = q,
+              type = "track",
+              limit = 3,
+              authorization = authorization
+            ) %>%
+              rowwise() %>%
+              mutate(matching = grepl(.data$name, q) |
+                grepl(.data$album.name, q)) %>%
+              arrange(desc(.data$matching)) %>%
+              head(1)
+            
+            if (nrow(sp) > 0) {
+              message(">>> Source: Spotify API")
+              source <- "spotify"
+            }
+          }, error = function(e) {
+            warning("Spotify metadata collection failed: ", e$message)
+          })
+        }
+      }
+
+      # 3. Process and apply metadata
+      if (!is.null(sp) && nrow(sp) > 0) {
+        tryCatch({
+          if (source == "spotify") {
+            album <- get_album(sp$album.id, authorization = authorization)
+            # Fetch (first) artist's genre if no album genres available
+            if (length(album$genres) == 0) {
+              artist <- search_spotify(
+                sp$artists[[1]]$name[1],
+                type = "artist", limit = 1,
+                authorization = authorization
+              )
+              genres <- cleanText(artist$genres[[1]][1],
+                spaces = TRUE, keep = c("&", "/"), title = TRUE
+              )
+            } else {
+              genres <- v2t(album$genres, sep = " / ")
+            }
+            label <- album$label
+            cover_url <- sp$album.images[[1]]$url[1]
+          } else {
+            # iTunes/Fallback specific data
+            genres <- sp$genre
+            label <- NULL
+            cover_url <- sp$cover_url
+          }
+
+          # Update all metadata tags
+          infox$audio <- mp3_update_tags(
+            mp3_file,
+            title = sp$name,
+            artist = v2t(sp$artists[[1]]$name, quotes = FALSE),
+            album = sp$album.name,
+            release_date = sp$album.release_date,
+            recording_date = sp$album.release_date,
+            track_num = tuple(count = sp$track_number, total = sp$album.total_tracks),
+            genre = genres,
+            label = label
+          )
+
+          # Handle cover art from URL
+          if (!is.null(cover_url)) {
+            message(">>> Adding cover...")
+            tmp_img <- tempfile(fileext = ".jpg")
+            httr::GET(cover_url, httr::write_disk(tmp_img, overwrite = TRUE))
+            img_bytes <- readBin(tmp_img, what = "raw", n = file.info(tmp_img)$size)
+            infox$audio$tag$images$set(3L, img_bytes, "image/jpeg", "Cover")
+            infox$audio$tag$save()
+            cover <- FALSE
+          }
+          infox$metadata <- sp
+        }, error = function(e) {
+          warning("Metadata processing failed: ", e$message)
+        })
+      } else {
+        warning("No metadata found for: ", infox$title)
+      }
+    }
+
     if (cover && mp3 && info) {
       aux <- gsub("\\.mp3", "", infox$title)
       aux <- gsub("lyrics|lyric|official|video", "", tolower(aux))
@@ -112,10 +275,10 @@ get_mp3 <- function(id,
     }
 
     # TRIM START AND/OR END OF AUDIO FILE
-    file <- sprintf("%s.mp3", infox$title)
     if (any(c(start_time > 0, !is.na(end_time)))) {
-      message(">>> Trimming audio file: ", file)
-      trim_mp3(file,
+      message(">>> Trimming audio file: ", filename)
+      mp3_trim(
+        file = mp3_file,
         start_time = start_time,
         end_time = end_time,
         overwrite = overwrite,
@@ -124,7 +287,6 @@ get_mp3 <- function(id,
     }
 
     # Open file once everything is done
-    mp3_file <- gsub(".info.json", ".mp3", f)
     if (open) {
       if (file.exists(mp3_file)) {
         message("Opening file: ", mp3_file)
@@ -155,29 +317,93 @@ get_mp3 <- function(id,
 #' timestamp. Requires \code{ffmpeg} installed in your machine.
 #'
 #' @family Audio
-#' @inheritParams get_mp3
+#' @inheritParams mp3_get
 #' @param file Character. File name to trim.
 #' @param ext Character. File extension/type.
 #' @export
-trim_mp3 <- function(file, start_time = 0, end_time = NA,
+mp3_trim <- function(file, start_time = 0, end_time = NA,
                      overwrite = FALSE, ext = "mp3",
                      quiet = FALSE) {
   start <- paste("-ss", start_time)
   end <- ifelse(!is.na(end_time), paste("-to", end_time), "")
   for (i in file) {
-    file <- ifelse(endsWith(i, ext), i, sprintf("%s.%s", file_name(i), ext))
-    if (!file.exists(file)) {
-      message(paste("File", file, "does not exist or can't be found."))
+    f <- ifelse(endsWith(i, ext), i, sprintf("%s.%s", file_name(i), ext))
+    if (!file.exists(f)) {
+      message(paste("File", f, "does not exist or can't be found."))
       next
+    }
+    # Quality for MP3: -q:a 0 is best VBR quality (~245kbps)
+    # Preservation of path and renaming
+    file_trimmed <- paste0(file_name(f), "_trimmed.", ext)
+    if (dirname(f) != ".") {
+      file_trimmed <- file.path(dirname(f), file_trimmed)
     }
     query2 <- paste(
       "ffmpeg -hide_banner -loglevel panic -y",
       start, end, "-i",
-      sprintf("'%s'", file),
-      sprintf("'%s'", paste0(file_name(file), "_trimmed.mp3"))
+      sprintf("'%s'", f),
+      "-q:a 0",
+      sprintf("'%s'", file_trimmed)
     )
     if (!quiet) message("Query: ", query2)
     system(query2)
-    if (overwrite) file.remove(gsub("_trimmed", "", file))
+    if (overwrite && file.exists(file_trimmed)) {
+      file.remove(f)
+      file.rename(file_trimmed, f)
+    }
   }
+}
+
+
+####################################################################
+#' Update MP3 Metadata Tags
+#'
+#' Updates the ID3 metadata tags of an MP3 file using the Python `eyeD3` library
+#' via the `reticulate` package. You can modify standard fields such as
+#' \code{title}, \code{artist}, \code{album}, and \code{genre}, as well as
+#' additional tags passed through \code{...} if they exist in the MP3 file.
+#' @details
+#' The function requires Python and the \code{eyeD3} package installed. It will
+#' automatically initialize ID3 tags if they do not exist. Tags provided via
+#' \code{...} are checked against the existing tag names to avoid errors.
+#'
+#' @family Audio
+#' @param filename Character. Path to the MP3 file to update.
+#' @param title Character. New title of the track (optional).
+#' @param artist Character. New artist name (optional).
+#' @param album Character. New album name (optional).
+#' @param genre Character. New genre name (optional).
+#' @param ... Additional named arguments corresponding to other ID3 tags.
+#' Only tags that exist in the MP3 file will be updated.
+#' @examples
+#' \dontrun{
+#' mp3_update_tags(
+#'   "song.mp3",
+#'   title = "My Jazz Song",
+#'   artist = "Bernardo",
+#'   album = "Smooth Album",
+#'   genre = "Jazz"
+#' )
+#' }
+#' @return Invisibly returns \code{NULL}. The MP3 file is updated in-place.
+#' @export
+mp3_update_tags <- function(filename, title = NULL, artist = NULL, album = NULL, genre = NULL, ...) {
+  if (!file.exists(filename)) {
+    message("File does not exist. Check filename input and working directory....")
+  } else {
+    try_require("reticulate")
+    eyeD3 <- NULL
+    eyeD3 <- import("eyed3")
+    audio <- eyeD3$load(normalizePath(filename))
+    if (is.null(audio$tag)) audio$initTag()
+    tag_args <- list(title = title, artist = artist, album = album, genre = genre, ...)
+    valid_tags <- names(audio$tag)
+    for (n in names(tag_args)) {
+      if (!is.null(tag_args[[n]]) && n %in% valid_tags) {
+        audio$tag[[n]] <- tag_args[[n]]
+      }
+    }
+    audio$tag$save()
+  }
+  invisible(audio)
 }
